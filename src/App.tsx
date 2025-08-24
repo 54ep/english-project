@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {  Plus, Brain, List, Trash2, Edit3, Check, X, Search, AlertCircle, Wifi, WifiOff } from 'lucide-react';
-import WordsAPI, { Word } from './api/wordsAPI';
+import WordsAPI, { Word, CustomLevel } from './api/wordsAPI';
  
-type View = 'home' | 'add' | 'test' | 'list' | 'search' | 'edit' | 'errors';
+type View = 'home' | 'add' | 'test' | 'list' | 'search' | 'edit' | 'errors' | 'test-success' | 'custom-levels' | 'custom-test';
 
 function App() {
   const [words, setWords] = useState<Word[]>([]);
@@ -18,10 +18,31 @@ function App() {
   const [isOnline, setIsOnline] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isErrorsTest, setIsErrorsTest] = useState(false); // لتتبع نوع الاختبار
+  
+  // مصفوفات الكلمات للاختبارات
+  const [testWords, setTestWords] = useState<Word[]>([]); // كلمات الاختبار العادي
+  const [errorTestWords, setErrorTestWords] = useState<Word[]>([]); // كلمات اختبار الأخطاء
+
+  // مستويات الاختبار المخصص
+  const [customLevels, setCustomLevels] = useState<CustomLevel[]>([]);
+  const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
+  const [levelWords, setLevelWords] = useState<Word[]>([]);
+  const [showLevelForm, setShowLevelForm] = useState(false);
+  const [newLevelName, setNewLevelName] = useState('');
+  const [selectedWordsForLevel, setSelectedWordsForLevel] = useState<string[]>([]);
+  const [customTestWords, setCustomTestWords] = useState<Word[]>([]);
+  const [isCustomTest, setIsCustomTest] = useState(false);
+
+  // Edit level state
+  const [editingLevel, setEditingLevel] = useState<CustomLevel | null>(null);
+  const [editLevelName, setEditLevelName] = useState('');
+  const [editLevelWords, setEditLevelWords] = useState<string[]>([]);
 
   // Load words from API on component mount
   useEffect(() => {
     loadWords();
+    loadCustomLevels();
     checkServerHealth();
   }, []);
 
@@ -40,6 +61,21 @@ function App() {
     } catch (error) {
       console.error('Error loading words:', error);
       setError('خطأ في تحميل الكلمات. تأكد من تشغيل الخادم.');
+      setIsOnline(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadCustomLevels = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const levels = await WordsAPI.getCustomLevels();
+      setCustomLevels(levels);
+      setIsOnline(true);
+    } catch (error) {
+      setError('خطأ في تحميل المستويات. تأكد من تشغيل الخادم.');
       setIsOnline(false);
     } finally {
       setLoading(false);
@@ -103,10 +139,31 @@ function App() {
 
   const startTest = () => {
     if (words.length === 0) return;
-    const randomWord = words[Math.floor(Math.random() * words.length)];
-    setCurrentTestWord(randomWord);
+    // عند بدء الاختبار العادي، نسجل جميع الكلمات في مصفوفة
+    setTestWords([...words]);
+    // اختيار كلمة عشوائية من المصفوفة
+    const randomIndex = Math.floor(Math.random() * words.length);
+    setCurrentTestWord(words[randomIndex]);
     setUserAnswer('');
     setShowResult(false);
+    setIsErrorsTest(false);
+    setCurrentView('test');
+  };
+
+  // بدء اختبار للكلمات التي أخطأ المستخدم فيها
+  const startErrorsTest = () => {
+    // عند بدء اختبار الكلمات الصعبة، نسجل فقط الكلمات التي أخطأ فيها المستخدم
+    const errorWords = words.filter(word => word.totalAttempts > word.correctAnswers && word.totalAttempts > 0);
+    if (errorWords.length === 0) {
+      setCurrentView('test-success');
+      return;
+    }
+    setErrorTestWords([...errorWords]);
+    const randomIndex = Math.floor(Math.random() * errorWords.length);
+    setCurrentTestWord(errorWords[randomIndex]);
+    setUserAnswer('');
+    setShowResult(false);
+    setIsErrorsTest(true);
     setCurrentView('test');
   };
 
@@ -125,6 +182,15 @@ function App() {
         prevWords.map(word => word.id === currentTestWord.id ? updatedWord : word)
       );
       setIsOnline(true);
+      
+      // إذا كانت الإجابة صحيحة، احذف الكلمة من المصفوفة
+      if (isAnswerCorrect) {
+        if (isErrorsTest) {
+          setErrorTestWords(prev => prev.filter(word => word.id !== currentTestWord.id));
+        } else {
+          setTestWords(prev => prev.filter(word => word.id !== currentTestWord.id));
+        }
+      }
     } catch (error) {
       console.error('Error updating word statistics:', error);
       setError('خطأ في تحديث الإحصائيات.');
@@ -133,7 +199,26 @@ function App() {
   };
 
   const nextQuestion = () => {
-    startTest();
+    if (isErrorsTest) {
+      if (errorTestWords.length === 0) {
+        setCurrentView('test-success');
+        return;
+      }
+      // اختيار كلمة عشوائية من الكلمات المتبقية
+      const randomIndex = Math.floor(Math.random() * errorTestWords.length);
+      setCurrentTestWord(errorTestWords[randomIndex]);
+      setUserAnswer('');
+      setShowResult(false);
+    } else {
+      if (testWords.length === 0) {
+        setCurrentView('test-success');
+        return;
+      }
+      const randomIndex = Math.floor(Math.random() * testWords.length);
+      setCurrentTestWord(testWords[randomIndex]);
+      setUserAnswer('');
+      setShowResult(false);
+    }
   };
 
   const getStats = () => {
@@ -143,6 +228,111 @@ function App() {
     const accuracy = totalAttempts > 0 ? Math.round((correctAnswers / totalAttempts) * 100) : 0;
     
     return { totalWords, totalAttempts, correctAnswers, accuracy };
+  };
+
+  // الحصول على الكلمات التي أخطأ المستخدم فيها
+  const getErrorWords = () => {
+    return words.filter(word => 
+      word.totalAttempts > word.correctAnswers && word.totalAttempts > 0
+    );
+  };
+
+  const addCustomLevel = async () => {
+    if (!newLevelName.trim() || selectedWordsForLevel.length === 0) return;
+    try {
+      setLoading(true);
+      setError(null);
+      const newLevel: CustomLevel = {
+        name: newLevelName.trim(),
+        wordIds: selectedWordsForLevel,
+        attempts: 0,
+        correctAnswers: 0
+      };
+      const savedLevel = await WordsAPI.addCustomLevel(newLevel);
+      setCustomLevels(prev => [...prev, savedLevel]);
+      setNewLevelName('');
+      setSelectedWordsForLevel([]);
+      setShowLevelForm(false);
+      setIsOnline(true);
+    } catch (error) {
+      setError('خطأ في حفظ المستوى. تأكد من الاتصال بالخادم أو أن اسم المستوى غير مكرر.');
+      setIsOnline(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const startCustomTest = (level: CustomLevel) => {
+    const wordsForLevel = words.filter(word => level.wordIds.includes(word.id));
+    setCustomTestWords([...wordsForLevel]);
+    setSelectedLevel(level.name);
+    setIsCustomTest(true);
+    setCurrentView('custom-test');
+    // اختيار كلمة عشوائية من المستوى
+    if (wordsForLevel.length > 0) {
+      const randomIndex = Math.floor(Math.random() * wordsForLevel.length);
+      setCurrentTestWord(wordsForLevel[randomIndex]);
+      setUserAnswer('');
+      setShowResult(false);
+    }
+  };
+
+  const checkCustomAnswer = async () => {
+    if (!currentTestWord || !selectedLevel) return;
+    const isAnswerCorrect = userAnswer.trim().toLowerCase() === currentTestWord.arabic.toLowerCase();
+    setIsCorrect(isAnswerCorrect);
+    setShowResult(true);
+    try {
+      setError(null);
+      const updatedWord = await WordsAPI.updateWordStats(currentTestWord.id, isAnswerCorrect);
+      setWords(prevWords => prevWords.map(word => word.id === currentTestWord.id ? updatedWord : word));
+      // تحديث إحصائيات المستوى نفسه
+      const updatedLevel = await WordsAPI.updateCustomLevelStats(selectedLevel, isAnswerCorrect);
+      setCustomLevels(prev => prev.map(level => level.name === selectedLevel ? updatedLevel : level));
+      setIsOnline(true);
+      if (isAnswerCorrect) {
+        setCustomTestWords(prev => prev.filter(word => word.id !== currentTestWord.id));
+      }
+    } catch (error) {
+      setError('خطأ في تحديث الإحصائيات.');
+      setIsOnline(false);
+    }
+  };
+
+  const nextCustomQuestion = () => {
+    if (customTestWords.length === 0) {
+      setCurrentView('test-success');
+      setIsCustomTest(false);
+      setSelectedLevel(null);
+      return;
+    }
+    const randomIndex = Math.floor(Math.random() * customTestWords.length);
+    setCurrentTestWord(customTestWords[randomIndex]);
+    setUserAnswer('');
+    setShowResult(false);
+  };
+
+  const deleteCustomLevel = async (levelName: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      await WordsAPI.deleteCustomLevel(levelName);
+      setCustomLevels(prev => prev.filter(level => level.name !== levelName));
+      setIsOnline(true);
+    } catch (error) {
+      setError('خطأ في حذف المستوى. تأكد من الاتصال بالخادم.');
+      setIsOnline(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getLevelStats = (level: CustomLevel) => {
+    const total = level.wordIds.length;
+    const attempts = level.attempts || 0;
+    const correct = level.correctAnswers || 0;
+    const accuracy = attempts > 0 ? Math.round((correct / attempts) * 100) : 0;
+    return { total, attempts, correct, accuracy };
   };
 
   const renderHome = () => {
@@ -231,7 +421,7 @@ function App() {
           </div>
 
           {/* Action Cards */}
-          <div className="grid grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-4 gap-4 mb-8">
             <button
               onClick={() => setCurrentView('list')}
               className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-center group"
@@ -264,6 +454,17 @@ function App() {
               </div>
               <h3 className="font-bold text-gray-800 mb-1">إضافة كلمة جديدة</h3>
               <p className="text-xs text-gray-600">أضف كلمات إنجليزية جديدة مع ترجمتها العربية</p>
+            </button>
+
+            <button
+              onClick={() => setCurrentView('custom-levels')}
+              className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-center group"
+            >
+              <div className="bg-yellow-500 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                <Brain className="text-white" size={24} />
+              </div>
+              <h3 className="font-bold text-gray-800 mb-1">اختبار مخصص</h3>
+              <p className="text-xs text-gray-600">أنشئ مستوياتك الخاصة واختبر كلمات محددة</p>
             </button>
           </div>
 
@@ -386,7 +587,9 @@ function App() {
                   <div className="bg-green-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Brain className="text-white" size={32} />
                   </div>
-                  <h2 className="text-xl font-bold text-gray-800 mb-2">اختبار المفردات</h2>
+                  <h2 className="text-xl font-bold text-gray-800 mb-2">
+                    {isErrorsTest ? 'اختبار الكلمات الصعبة' : 'اختبار المفردات'}
+                  </h2>
                   <p className="text-gray-600 text-sm">ما معنى هذه الكلمة بالعربية؟</p>
                 </div>
 
@@ -602,6 +805,387 @@ function App() {
     );
   };
 
+  const renderTestSuccess = () => {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-400 via-green-500 to-teal-600 p-4">
+        <div className="max-w-md mx-auto">
+          <div className="bg-white rounded-2xl shadow-xl p-6 text-center">
+            <div className="bg-green-100 p-6 rounded-xl mb-6">
+              <div className="text-green-500 text-7xl mb-4">🎉</div>
+              <h2 className="text-2xl font-bold text-green-800 mb-3">مبروك! أجتزت الاختبار</h2>
+              <p className="text-green-700 mb-4">لقد أجبت بشكل صحيح على جميع الكلمات</p>
+              <div className="bg-green-50 rounded-lg p-4 mb-6">
+                <p className="text-green-800 text-sm">استمر في الممارسة للحفاظ على مستواك الممتاز</p>
+              </div>
+              
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                <div className="h-2 w-2 rounded-full bg-green-500"></div>
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              <button
+                onClick={() => setCurrentView('add')}
+                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-xl font-medium hover:from-blue-600 hover:to-purple-700 transition-all"
+              >
+                إضافة كلمات جديدة
+              </button>
+              
+              <button
+                onClick={() => setCurrentView('home')}
+                className="w-full bg-gray-100 text-gray-700 py-3 rounded-xl font-medium hover:bg-gray-200 transition-colors"
+              >
+                العودة للرئيسية
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderErrorsView = () => {
+    const errorWords = getErrorWords();
+    
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-400 via-red-500 to-pink-500 p-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-6">
+            <div className="bg-white rounded-2xl p-4 inline-block mb-4">
+              <AlertCircle className="text-red-600" size={32} />
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-2">مراجعة الأخطاء</h2>
+            <p className="text-red-100">تعلم من أخطائك السابقة ({errorWords.length} كلمة)</p>
+          </div>
+
+          {errorWords.length > 0 ? (
+            <>
+              <div className="space-y-3 mb-6">
+                {errorWords.map((word) => (
+                  <div key={word.id} className="bg-white rounded-xl shadow-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-4">
+                          <div className="text-lg font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-lg" dir="ltr">
+                            {word.english}
+                          </div>
+                          <div className="text-lg text-gray-700 bg-gray-50 px-3 py-1 rounded-lg" dir="rtl">
+                            {word.arabic}
+                          </div>
+                        </div>
+                        <div className="text-sm text-red-500 mt-2" dir="rtl">
+                          نجح {word.correctAnswers} من {word.totalAttempts} محاولة
+                          <span className="mr-2 text-gray-500">•</span>
+                          نسبة الخطأ: {Math.round(((word.totalAttempts - word.correctAnswers) / word.totalAttempts) * 100)}%
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-col items-center gap-4 mb-6">
+                <button
+                  onClick={() => startErrorsTest()}
+                  className="bg-white text-red-600 px-6 py-3 rounded-xl font-medium hover:bg-red-50 transition-colors flex items-center gap-2"
+                >
+                  <Brain size={20} />
+                  اختبار الكلمات الصعبة
+                </button>
+                <p className="text-white text-sm opacity-90">
+                  سيتم اختبارك فقط على الكلمات التي أخطأت فيها سابقاً
+                </p>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-12">
+              <div className="text-white text-6xl mb-4">🎉</div>
+              <p className="text-red-100 mb-4">أحسنت! ليس لديك أخطاء لمراجعتها</p>
+              <p className="text-white text-sm opacity-80 mb-6">حاول اختبار نفسك على المزيد من الكلمات</p>
+              <button
+                onClick={() => startTest()}
+                className="bg-white text-red-600 px-6 py-3 rounded-xl font-medium hover:bg-red-50 transition-colors flex items-center gap-2 mx-auto"
+              >
+                <Brain size={20} />
+                ابدأ اختبار جديد
+              </button>
+            </div>
+          )}
+
+          <div className="text-center mt-6">
+            <button
+              onClick={() => setCurrentView('home')}
+              className="bg-white text-red-600 px-6 py-3 rounded-xl font-medium hover:bg-red-50 transition-colors"
+            >
+              العودة للرئيسية
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderCustomLevels = () => (
+    <div className="min-h-screen bg-gradient-to-br from-yellow-400 via-yellow-500 to-orange-600 p-4">
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
+          <h2 className="text-xl font-bold text-gray-800 mb-2">الاختبارات المخصصة</h2>
+          <p className="text-gray-600 text-sm mb-4">أنشئ مستوياتك الخاصة وأضف كلمات من القائمة المحفوظة</p>
+          <button
+            onClick={() => setShowLevelForm(true)}
+            className="bg-yellow-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-yellow-600 transition-colors mb-4"
+          >
+            إضافة مستوى جديد
+          </button>
+          {customLevels.length === 0 && <div className="text-gray-500 mb-4">لا توجد مستويات بعد</div>}
+          {customLevels.map(level => {
+            const stats = getLevelStats(level);
+            return (
+              <div key={level.name} className="bg-yellow-50 rounded-xl p-4 mb-3 flex items-center justify-between">
+                <div>
+                  <div className="font-bold text-yellow-700">{level.name}</div>
+                  <div className="text-xs text-gray-600">عدد الكلمات: {level.wordIds.length}</div>
+                  <div className="text-xs text-gray-600">إجمالي المحاولات: {stats.attempts}</div>
+                  <div className="text-xs text-gray-600">إجابات صحيحة: {stats.correct}</div>
+                  <div className="text-xs text-gray-600">نسبة النجاح: {stats.accuracy}%</div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => startCustomTest(level)}
+                    className="bg-yellow-600 text-white px-3 py-1 rounded-lg font-medium hover:bg-yellow-700 transition-colors"
+                  >
+                    بدء اختبار المستوى
+                  </button>
+                  <button
+                    onClick={() => startEditLevel(level)}
+                    className="bg-blue-500 text-white px-3 py-1 rounded-lg font-medium hover:bg-blue-600 transition-colors"
+                  >
+                    تعديل
+                  </button>
+                  <button
+                    onClick={() => deleteCustomLevel(level.name)}
+                    className="bg-red-500 text-white px-3 py-1 rounded-lg font-medium hover:bg-red-600 transition-colors"
+                  >
+                    حذف
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        {showLevelForm && (
+          <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
+            <h2 className="text-xl font-bold text-gray-800 mb-2">إضافة مستوى جديد</h2>
+            <p className="text-gray-600 text-sm mb-4">اختر اسمًا فريدًا للمستوى وحدد الكلمات المراد تضمينها</p>
+            <input
+              type="text"
+              value={newLevelName}
+              onChange={e => setNewLevelName(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4"
+              placeholder="اسم المستوى (مثلاً: مبتدئ، متوسط، صعب)"
+            />
+            <div className="mb-4">
+              <div className="font-bold mb-2">اختر الكلمات من القائمة المحفوظة:</div>
+              <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                {words.map(word => (
+                  <label key={word.id} className="flex items-center gap-2 bg-gray-50 rounded-lg px-2 py-1">
+                    <input
+                      type="checkbox"
+                      checked={selectedWordsForLevel.includes(word.id)}
+                      onChange={e => {
+                        if (e.target.checked) {
+                          setSelectedWordsForLevel(prev => [...prev, word.id]);
+                        } else {
+                          setSelectedWordsForLevel(prev => prev.filter(id => id !== word.id));
+                        }
+                      }}
+                    />
+                    <span className="text-blue-700 font-bold">{word.english}</span>
+                    <span className="text-gray-600">{word.arabic}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <button
+              onClick={addCustomLevel}
+              className="bg-yellow-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-yellow-700 transition-colors"
+            >
+              حفظ المستوى
+            </button>
+            <button
+              onClick={() => setShowLevelForm(false)}
+              className="ml-2 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+            >
+              إلغاء
+            </button>
+          </div>
+        )}
+        {editingLevel && (
+          <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
+            <h3 className="text-lg font-bold mb-2">تعديل المستوى</h3>
+            <input
+              type="text"
+              value={editLevelName}
+              onChange={e => setEditLevelName(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4"
+              placeholder="اسم المستوى الجديد"
+            />
+            <div className="mb-4">
+              <div className="font-bold mb-2">تعديل الكلمات في المستوى:</div>
+              <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                {words.map(word => (
+                  <label key={word.id} className="flex items-center gap-2 bg-gray-50 rounded-lg px-2 py-1">
+                    <input
+                      type="checkbox"
+                      checked={editLevelWords.includes(word.id)}
+                      onChange={e => {
+                        if (e.target.checked) {
+                          setEditLevelWords(prev => [...prev, word.id]);
+                        } else {
+                          setEditLevelWords(prev => prev.filter(id => id !== word.id));
+                        }
+                      }}
+                    />
+                    <span className="text-blue-700 font-bold">{word.english}</span>
+                    <span className="text-gray-600">{word.arabic}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <button
+              onClick={saveEditLevel}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            >
+              حفظ التعديلات
+            </button>
+            <button
+              onClick={cancelEditLevel}
+              className="ml-2 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+            >
+              إلغاء
+            </button>
+          </div>
+        )}
+      </div>
+      <div className="text-center mt-6">
+        <button
+          onClick={() => setCurrentView('home')}
+          className="bg-white text-yellow-600 px-6 py-3 rounded-xl font-medium hover:bg-yellow-50 transition-colors"
+        >
+          العودة للرئيسية
+        </button>
+      </div>
+    </div>
+  );
+
+  const renderCustomTest = () => {
+    if (!currentTestWord) return null;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-yellow-400 via-yellow-500 to-orange-600 p-4">
+        <div className="max-w-md mx-auto">
+          <div className="bg-white rounded-2xl shadow-xl p-6">
+            {!showResult ? (
+              <>
+                <div className="text-center mb-6">
+                  <div className="bg-yellow-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Brain className="text-white" size={32} />
+                  </div>
+                  <h2 className="text-xl font-bold text-gray-800 mb-2">اختبار مستوى: {selectedLevel}</h2>
+                  <p className="text-gray-600 text-sm">ما معنى هذه الكلمة بالعربية؟</p>
+                </div>
+                <div className="text-center mb-6">
+                  <div className="bg-gradient-to-r from-yellow-50 to-orange-50 p-6 rounded-xl mb-4 border-2 border-yellow-100">
+                    <div className="text-3xl font-bold text-yellow-600 mb-2" dir="ltr">{currentTestWord.english}</div>
+                  </div>
+                  <input
+                    type="text"
+                    value={userAnswer}
+                    onChange={e => setUserAnswer(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all text-center"
+                    placeholder="اكتب المعنى بالعربية..."
+                    dir="rtl"
+                    onKeyPress={e => e.key === 'Enter' && checkCustomAnswer()}
+                  />
+                </div>
+                <button
+                  onClick={checkCustomAnswer}
+                  disabled={!userAnswer.trim()}
+                  className="w-full bg-gradient-to-r from-yellow-500 to-orange-600 text-white py-3 rounded-xl font-medium hover:from-yellow-600 hover:to-orange-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  تحقق من الإجابة
+                </button>
+              </>
+            ) : (
+              <div className="text-center">
+                <div className={`p-6 rounded-xl mb-6 ${isCorrect ? 'bg-yellow-50 border-2 border-yellow-200' : 'bg-red-50 border-2 border-red-200'}`}>
+                  <div className={`text-6xl mb-3 ${isCorrect ? 'text-yellow-500' : 'text-red-500'}`}>{isCorrect ? '✅' : '❌'}</div>
+                  <div className="text-lg font-bold mb-2">{isCorrect ? 'إجابة صحيحة!' : 'إجابة خاطئة'}</div>
+                  <div className="text-gray-700">
+                    <div className="mb-1" dir="ltr"><strong>{currentTestWord.english}</strong></div>
+                    <div dir="rtl">المعنى الصحيح: <strong>{currentTestWord.arabic}</strong></div>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <button
+                    onClick={nextCustomQuestion}
+                    className="w-full bg-gradient-to-r from-yellow-500 to-orange-600 text-white py-3 rounded-xl font-medium hover:from-yellow-600 hover:to-orange-700 transition-all"
+                  >
+                    كلمة أخرى
+                  </button>
+                  <button
+                    onClick={() => { setCurrentView('custom-levels'); setIsCustomTest(false); setSelectedLevel(null); }}
+                    className="w-full bg-gray-100 text-gray-700 py-3 rounded-xl font-medium hover:bg-gray-200 transition-colors"
+                  >
+                    العودة للمستويات
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  function startEditLevel(level: CustomLevel) {
+    setEditingLevel(level);
+    setEditLevelName(level.name);
+    setEditLevelWords([...level.wordIds]);
+  }
+
+  async function saveEditLevel() {
+    if (!editingLevel) return;
+    if (!editLevelName.trim() || editLevelWords.length === 0) return;
+    try {
+      setLoading(true);
+      setError(null);
+      await WordsAPI.deleteCustomLevel(editingLevel.name);
+      const updatedLevel: CustomLevel = {
+        name: editLevelName.trim(),
+        wordIds: editLevelWords,
+        attempts: editingLevel.attempts || 0,
+        correctAnswers: editingLevel.correctAnswers || 0
+      };
+      const savedLevel = await WordsAPI.addCustomLevel(updatedLevel);
+      setCustomLevels(prev => prev.map(l => l.name === editingLevel.name ? savedLevel : l));
+      cancelEditLevel();
+      setIsOnline(true);
+    } catch (error) {
+      setError('خطأ في تعديل المستوى. تأكد من الاتصال بالخادم أو أن اسم المستوى غير مكرر.');
+      setIsOnline(false);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function cancelEditLevel() {
+    setEditingLevel(null);
+    setEditLevelName('');
+    setEditLevelWords([]);
+  }
+
   return (
     <div className="font-sans">
       {currentView === 'home' && renderHome()}
@@ -609,7 +1193,11 @@ function App() {
       {currentView === 'test' && renderTest()}
       {currentView === 'list' && renderWordList()}
       {currentView === 'search' && renderSearch()}
-      {(currentView === 'edit' || currentView === 'errors') && renderWordList()}
+      {currentView === 'edit' && renderWordList()}
+      {currentView === 'errors' && renderErrorsView()}
+      {currentView === 'custom-levels' && renderCustomLevels()}
+      {currentView === 'custom-test' && renderCustomTest()}
+      {currentView === 'test-success' && renderTestSuccess()}
     </div>
   );
 }

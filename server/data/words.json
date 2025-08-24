@@ -4,7 +4,15 @@
     "english": "book",
     "arabic": "كتاب",
     "dateAdded": "٢٣‏/٨‏/٢٠٢٥",
-    "correctAnswers": 0,
-    "totalAttempts": 0
+    "correctAnswers": 21,
+    "totalAttempts": 39
+  },
+  {
+    "id": "1756054377845",
+    "english": "door",
+    "arabic": "باب",
+    "dateAdded": "٢٤‏/٨‏/٢٠٢٥",
+    "correctAnswers": 2,
+    "totalAttempts": 2
   }
 ]
