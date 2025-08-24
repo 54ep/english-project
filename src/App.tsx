@@ -345,23 +345,23 @@ function App() {
             <span className="text-lg font-bold mb-1">الكلمات المحفوظة</span>
             <span className="text-3xl font-extrabold">{stats.totalWords}</span>
             </div>
-          <div className="text-white text-right w-full sm:w-auto">
-            <h1 className="text-xl font-bold">مُحفظ الكلمات</h1>
-            <p className="text-sm opacity-90">تعلم الإنجليزية بسهولة</p>
-            <div className="flex items-center gap-1 mt-1">
+            <div className="flex flex-col items-end justify-center w-full sm:w-auto text-white px-4 py-3 rounded-2xl bg-gradient-to-r from-purple-700 to-purple-500 shadow-lg">
+            <h1 className="text-2xl sm:text-3xl font-extrabold mb-1 tracking-tight drop-shadow">مُحفظ الكلمات</h1>
+            <p className="text-sm sm:text-base opacity-90 mb-2">تعلم الإنجليزية بسهولة</p>
+            <div className="flex items-center justify-center w-full gap-2 mt-1">
               {isOnline ? (
-                <>
-                  <Wifi size={16} className="text-green-300" />
-                  <span className="text-xs text-green-300">متصل</span>
-                </>
+              <>
+                <Wifi size={18} className="text-green-400 animate-pulse" />
+                <span className="text-xs sm:text-sm text-green-300 font-semibold">متصل</span>
+              </>
               ) : (
-                <>
-                  <WifiOff size={16} className="text-red-300" />
-                  <span className="text-xs text-red-300">غير متصل</span>
-                </>
+              <>
+                <WifiOff size={18} className="text-red-400 animate-pulse" />
+                <span className="text-xs sm:text-sm text-red-300 font-semibold">غير متصل</span>
+              </>
               )}
             </div>
-          </div>
+            </div>
         </div>
 
         {/* Error message */}
@@ -508,8 +508,8 @@ function App() {
 
   const renderAddWord = () => {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-400 via-blue-500 to-purple-600 p-4">
-        <div className="max-w-md mx-auto">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-400 via-blue-500 to-purple-600 p-4">
+        <div className="max-w-md w-full mx-auto">
           <div className="bg-white rounded-2xl shadow-xl p-6">
             <div className="text-center mb-6">
               <div className="bg-blue-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -576,8 +576,8 @@ function App() {
     if (!currentTestWord) return null;
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-400 via-green-500 to-emerald-600 p-4">
-        <div className="max-w-md mx-auto">
+      <div className="min-h-screen bg-gradient-to-br from-green-400 via-green-500 to-emerald-600 p-4 flex items-center justify-center ">
+        <div className="max-w-md w-full mx-auto">
           <div className="bg-white rounded-2xl shadow-xl p-6">
             {!showResult ? (
               <>
@@ -661,8 +661,8 @@ function App() {
 
   const renderWordList = () => {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-400 via-purple-500 to-pink-500 p-4">
-        <div className="max-w-4xl mx-auto">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-purple-400 via-purple-500 to-pink-500 p-4">
+        <div className="max-w-4xl w-full mx-auto">
           <div className="text-center mb-6">
             <div className="bg-white rounded-2xl p-4 inline-block mb-4">
               <List className="text-purple-600" size={32} />
@@ -752,8 +752,8 @@ function App() {
     );
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 p-4">
-        <div className="max-w-4xl mx-auto">
+      <div className="min-h-screen flex items-center justify-center flex-col bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 p-4">
+        <div className="max-w-4xl w-full mx-auto">
           <div className="text-center mb-6">
             <div className="bg-white rounded-2xl p-4 inline-block mb-4">
               <Search className="text-purple-600" size={32} />
@@ -853,8 +853,8 @@ function App() {
     const errorWords = getErrorWords();
     
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-400 via-red-500 to-pink-500 p-4">
-        <div className="max-w-4xl mx-auto">
+      <div className="min-h-screen bg-gradient-to-br from-red-400 via-red-500 to-pink-500 p-4 flex items-center justify-center">
+        <div className="max-w-4xl w-full mx-auto">
           <div className="text-center mb-6">
             <div className="bg-white rounded-2xl p-4 inline-block mb-4">
               <AlertCircle className="text-red-600" size={32} />
@@ -931,8 +931,8 @@ function App() {
   };
 
   const renderCustomLevels = () => (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-400 via-yellow-500 to-orange-600 p-4">
-      <div className="max-w-2xl mx-auto">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-yellow-400 via-yellow-500 to-orange-600 p-4">
+      <div className="max-w-2xl w-full mx-auto">
         <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
           <h2 className="text-xl font-bold text-gray-800 mb-2">الاختبارات المخصصة</h2>
           <p className="text-gray-600 text-sm mb-4">أنشئ مستوياتك الخاصة وأضف كلمات من القائمة المحفوظة</p>
