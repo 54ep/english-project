@@ -19,10 +19,12 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isErrorsTest, setIsErrorsTest] = useState(false); // لتتبع نوع الاختبار
-  
+  const [isCheckingCustomAnswer, setIsCheckingCustomAnswer] = useState(false); // لتتبع حالة التحقق في الاختبار المخصص
+
   // مصفوفات الكلمات للاختبارات
   const [testWords, setTestWords] = useState<Word[]>([]); // كلمات الاختبار العادي
   const [errorTestWords, setErrorTestWords] = useState<Word[]>([]); // كلمات اختبار الأخطاء
+  const [customTestWords, setCustomTestWords] = useState<Word[]>([]);
 
   // مستويات الاختبار المخصص
   const [customLevels, setCustomLevels] = useState<CustomLevel[]>([]);
@@ -30,7 +32,6 @@ function App() {
   const [showLevelForm, setShowLevelForm] = useState(false);
   const [newLevelName, setNewLevelName] = useState('');
   const [selectedWordsForLevel, setSelectedWordsForLevel] = useState<string[]>([]);
-  const [customTestWords, setCustomTestWords] = useState<Word[]>([]);
 
   // Edit level state
   const [editingLevel, setEditingLevel] = useState<CustomLevel | null>(null);
@@ -278,6 +279,7 @@ function App() {
 
   const checkCustomAnswer = async () => {
     if (!currentTestWord || !selectedLevel) return;
+    setIsCheckingCustomAnswer(true);
     const isAnswerCorrect = userAnswer.trim().toLowerCase() === currentTestWord.arabic.toLowerCase();
     setIsCorrect(isAnswerCorrect);
     setShowResult(true);
@@ -295,7 +297,8 @@ function App() {
     } catch (error) {
       setError('خطأ في تحديث الإحصائيات.');
       setIsOnline(false);
-      console.error('Error updating word stats:', error);
+    } finally {
+      setIsCheckingCustomAnswer(false);
     }
   };
 
@@ -640,6 +643,7 @@ function App() {
                 <div className="flex flex-col gap-3 w-full max-w-xs sm:max-w-sm mx-auto">
                   <button
                     onClick={nextQuestion}
+                    
                     className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-xl font-medium shadow hover:from-blue-600 hover:to-purple-700 transition-all"
                   >
                     كلمة أخرى
@@ -1109,15 +1113,16 @@ function App() {
                     className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all text-center"
                     placeholder="اكتب المعنى بالعربية..."
                     dir="rtl"
-                    onKeyPress={e => e.key === 'Enter' && checkCustomAnswer()}
+                    onKeyPress={e => e.key === 'Enter' && !isCheckingCustomAnswer && checkCustomAnswer()}
+                    disabled={isCheckingCustomAnswer}
                   />
                 </div>
                 <button
                   onClick={checkCustomAnswer}
-                  disabled={!userAnswer.trim()}
+                  disabled={!userAnswer.trim() || isCheckingCustomAnswer}
                   className="w-full bg-gradient-to-r from-yellow-500 to-orange-600 text-white py-3 rounded-xl font-medium hover:from-yellow-600 hover:to-orange-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  تحقق من الإجابة
+                  {isCheckingCustomAnswer ? 'جاري التحقق...' : 'تحقق من الإجابة'}
                 </button>
               </>
             ) : (
@@ -1142,6 +1147,7 @@ function App() {
                 </div>
                 <div className="flex flex-col gap-3 w-full max-w-xs sm:max-w-sm mx-auto">
                   <button
+                    disabled={isCheckingCustomAnswer}
                     onClick={nextCustomQuestion}
                     className="w-full bg-gradient-to-r from-yellow-500 to-orange-600 text-white py-3 rounded-xl font-medium hover:from-yellow-600 hover:to-orange-700 transition-all"
                   >
