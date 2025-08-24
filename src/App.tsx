@@ -27,12 +27,10 @@ function App() {
   // مستويات الاختبار المخصص
   const [customLevels, setCustomLevels] = useState<CustomLevel[]>([]);
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
-  const [levelWords, setLevelWords] = useState<Word[]>([]);
   const [showLevelForm, setShowLevelForm] = useState(false);
   const [newLevelName, setNewLevelName] = useState('');
   const [selectedWordsForLevel, setSelectedWordsForLevel] = useState<string[]>([]);
   const [customTestWords, setCustomTestWords] = useState<Word[]>([]);
-  const [isCustomTest, setIsCustomTest] = useState(false);
 
   // Edit level state
   const [editingLevel, setEditingLevel] = useState<CustomLevel | null>(null);
@@ -75,6 +73,7 @@ function App() {
       setCustomLevels(levels);
       setIsOnline(true);
     } catch (error) {
+      console.error('Error loading custom levels:', error);
       setError('خطأ في تحميل المستويات. تأكد من تشغيل الخادم.');
       setIsOnline(false);
     } finally {
@@ -255,6 +254,7 @@ function App() {
       setShowLevelForm(false);
       setIsOnline(true);
     } catch (error) {
+      console.error('Error adding custom level:', error);
       setError('خطأ في حفظ المستوى. تأكد من الاتصال بالخادم أو أن اسم المستوى غير مكرر.');
       setIsOnline(false);
     } finally {
@@ -266,7 +266,6 @@ function App() {
     const wordsForLevel = words.filter(word => level.wordIds.includes(word.id));
     setCustomTestWords([...wordsForLevel]);
     setSelectedLevel(level.name);
-    setIsCustomTest(true);
     setCurrentView('custom-test');
     // اختيار كلمة عشوائية من المستوى
     if (wordsForLevel.length > 0) {
@@ -296,14 +295,13 @@ function App() {
     } catch (error) {
       setError('خطأ في تحديث الإحصائيات.');
       setIsOnline(false);
+      console.error('Error updating word stats:', error);
     }
   };
 
   const nextCustomQuestion = () => {
     if (customTestWords.length === 0) {
       setCurrentView('test-success');
-      setIsCustomTest(false);
-      setSelectedLevel(null);
       return;
     }
     const randomIndex = Math.floor(Math.random() * customTestWords.length);
@@ -322,6 +320,7 @@ function App() {
     } catch (error) {
       setError('خطأ في حذف المستوى. تأكد من الاتصال بالخادم.');
       setIsOnline(false);
+      console.error('Error deleting custom level:', error);
     } finally {
       setLoading(false);
     }
@@ -339,15 +338,14 @@ function App() {
     const stats = getStats();
     
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-400 via-purple-500 to-purple-600 p-4">
+      <div className="min-h-screen bg-gradient-to-br from-purple-400 via-purple-500 to-purple-600 p-2 sm:p-4">
         {/* Header with connection status */}
-        <div className="flex justify-between items-center mb-8">
-          <div className="bg-purple-600 text-white px-4 py-2 rounded-full text-sm">
-            الكلمات المحفوظة
-            <br />
-            {stats.totalWords}
-          </div>
-          <div className="text-white text-right">
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
+            <div className="flex flex-col items-center justify-center bg-purple-600 text-white px-6 py-3 rounded-2xl shadow-lg mb-2 sm:mb-0">
+            <span className="text-lg font-bold mb-1">الكلمات المحفوظة</span>
+            <span className="text-3xl font-extrabold">{stats.totalWords}</span>
+            </div>
+          <div className="text-white text-right w-full sm:w-auto">
             <h1 className="text-xl font-bold">مُحفظ الكلمات</h1>
             <p className="text-sm opacity-90">تعلم الإنجليزية بسهولة</p>
             <div className="flex items-center gap-1 mt-1">
@@ -390,14 +388,14 @@ function App() {
           </div>
         )}
 
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl mx-auto w-full">
           {/* Hero Image and Welcome */}
           <div className="text-center mb-8">
-            <div className="bg-white rounded-2xl p-6 mb-6 shadow-lg">
+            <div className="bg-white rounded-2xl p-4 sm:p-6 mb-6 shadow-lg">
               <img 
                 src="https://images.pexels.com/photos/159711/books-bookstore-book-reading-159711.jpeg?auto=compress&cs=tinysrgb&w=800" 
                 alt="مكتبة" 
-                className="w-full h-48 object-cover rounded-xl mb-4"
+                className="w-full h-32 sm:h-48 object-cover rounded-xl mb-4"
               />
               <h2 className="text-xl font-bold text-gray-800 mb-2">مرحباً بك في تطبيق حفظ الكلمات</h2>
               <p className="text-gray-600 text-sm">طور مفردات اللغة الإنجليزية الخاصة بك بطريقة تفاعلية وممتعة</p>
@@ -405,7 +403,7 @@ function App() {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
             <div className="bg-gradient-to-r from-orange-400 to-orange-500 text-white p-4 rounded-2xl text-center">
               <div className="text-2xl font-bold">{stats.accuracy}</div>
               <div className="text-sm opacity-90">نسبة النجاح</div>
@@ -421,12 +419,12 @@ function App() {
           </div>
 
           {/* Action Cards */}
-          <div className="grid grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
             <button
               onClick={() => setCurrentView('list')}
-              className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-center group"
+              className="bg-white p-4 sm:p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-center group"
             >
-              <div className="bg-green-500 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+              <div className="bg-green-500 w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
                 <List className="text-white" size={24} />
               </div>
               <h3 className="font-bold text-gray-800 mb-1">مراجعة الكلمات</h3>
@@ -436,9 +434,9 @@ function App() {
             <button
               onClick={startTest}
               disabled={words.length === 0}
-              className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-center group disabled:opacity-50"
+              className="bg-white p-4 sm:p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-center group disabled:opacity-50"
             >
-              <div className="bg-pink-500 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+              <div className="bg-pink-500 w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
                 <Brain className="text-white" size={24} />
               </div>
               <h3 className="font-bold text-gray-800 mb-1">اختبر نفسك</h3>
@@ -447,9 +445,9 @@ function App() {
 
             <button
               onClick={() => setCurrentView('add')}
-              className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-center group"
+              className="bg-white p-4 sm:p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-center group"
             >
-              <div className="bg-blue-500 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+              <div className="bg-blue-500 w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
                 <Plus className="text-white" size={24} />
               </div>
               <h3 className="font-bold text-gray-800 mb-1">إضافة كلمة جديدة</h3>
@@ -458,9 +456,9 @@ function App() {
 
             <button
               onClick={() => setCurrentView('custom-levels')}
-              className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-center group"
+              className="bg-white p-4 sm:p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-center group"
             >
-              <div className="bg-yellow-500 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+              <div className="bg-yellow-500 w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
                 <Brain className="text-white" size={24} />
               </div>
               <h3 className="font-bold text-gray-800 mb-1">اختبار مخصص</h3>
@@ -469,12 +467,12 @@ function App() {
           </div>
 
           {/* Additional Features */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <button
               onClick={() => setCurrentView('search')}
-              className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-center group"
+              className="bg-white p-4 sm:p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-center group"
             >
-              <div className="bg-purple-500 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+              <div className="bg-purple-500 w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
                 <Search className="text-white" size={24} />
               </div>
               <h3 className="font-bold text-gray-800 mb-1">البحث</h3>
@@ -483,9 +481,9 @@ function App() {
 
             <button
               onClick={() => setCurrentView('edit')}
-              className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-center group"
+              className="bg-white p-4 sm:p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-center group"
             >
-              <div className="bg-orange-500 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+              <div className="bg-orange-500 w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
                 <Edit3 className="text-white" size={24} />
               </div>
               <h3 className="font-bold text-gray-800 mb-1">تعديل الكلمات</h3>
@@ -494,9 +492,9 @@ function App() {
 
             <button
               onClick={() => setCurrentView('errors')}
-              className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-center group"
+              className="bg-white p-4 sm:p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-center group"
             >
-              <div className="bg-red-500 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+              <div className="bg-red-500 w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
                 <AlertCircle className="text-white" size={24} />
               </div>
               <h3 className="font-bold text-gray-800 mb-1">مراجعة الأخطاء</h3>
@@ -620,31 +618,35 @@ function App() {
                 </button>
               </>
             ) : (
-              <div className="text-center">
-                <div className={`p-6 rounded-xl mb-6 ${isCorrect ? 'bg-green-50 border-2 border-green-200' : 'bg-red-50 border-2 border-red-200'}`}>
-                  <div className={`text-6xl mb-3 ${isCorrect ? 'text-green-500' : 'text-red-500'}`}>
-                    {isCorrect ? '✅' : '❌'}
+              <div className="flex flex-col items-center justify-center text-center w-full gap-4">
+                <div className={`flex flex-col items-center justify-center p-6 sm:p-8 rounded-2xl mb-6 shadow-lg border transition-all duration-300 ${isCorrect ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}
+                  style={{ minWidth: '220px', maxWidth: '400px', margin: '0 auto' }}>
+                  <div className={`flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full mb-4 shadow-lg ${isCorrect ? 'bg-green-100' : 'bg-red-100'}`}> 
+                    <span className={`text-4xl sm:text-5xl ${isCorrect ? 'text-green-500' : 'text-red-500'}`}>{isCorrect ? '✅' : '❌'}</span>
                   </div>
-                  <div className="text-lg font-bold mb-2">
-                    {isCorrect ? 'إجابة صحيحة!' : 'إجابة خاطئة'}
-                  </div>
-                  <div className="text-gray-700">
-                    <div className="mb-1" dir="ltr"><strong>{currentTestWord.english}</strong></div>
-                    <div dir="rtl">المعنى الصحيح: <strong>{currentTestWord.arabic}</strong></div>
-                  </div>
+                  <div className={`text-xl sm:text-2xl font-bold mb-2 ${isCorrect ? 'text-green-700' : 'text-red-700'}`}>{isCorrect ? 'إجابة صحيحة!' : 'إجابة خاطئة'}</div>
+                  <div className="text-gray-700 text-base sm:text-lg mb-1 font-semibold" dir="ltr"><strong>{currentTestWord.english}</strong></div>
+                  <div className="text-gray-600 text-sm sm:text-base mb-2" dir="rtl">المعنى الصحيح: <strong>{currentTestWord.arabic}</strong></div>
+                  {isCorrect ? (
+                    <div className="bg-green-50 rounded-xl p-3 mt-2 shadow text-green-700 text-sm sm:text-base font-medium animate-fade-in">
+                      رائع! استمر في هذا الأداء المميز، كل إجابة صحيحة تقربك من إتقان اللغة أكثر 💪✨
+                    </div>
+                  ) : (
+                    <div className="bg-red-50 rounded-xl p-3 mt-2 shadow text-red-700 text-sm sm:text-base font-medium animate-fade-in">
+                      لا تقلق! الخطأ جزء من التعلم، حاول مرة أخرى وستتحسن مهاراتك مع الوقت 🚀
+                    </div>
+                  )}
                 </div>
-
-                <div className="space-y-3">
+                <div className="flex flex-col gap-3 w-full max-w-xs sm:max-w-sm mx-auto">
                   <button
                     onClick={nextQuestion}
-                    className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-xl font-medium hover:from-blue-600 hover:to-purple-700 transition-all"
+                    className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-xl font-medium shadow hover:from-blue-600 hover:to-purple-700 transition-all"
                   >
                     كلمة أخرى
                   </button>
-                  
                   <button
                     onClick={() => setCurrentView('home')}
-                    className="w-full bg-gray-100 text-gray-700 py-3 rounded-xl font-medium hover:bg-gray-200 transition-colors"
+                    className="w-full bg-gray-100 text-gray-700 py-3 rounded-xl font-medium shadow hover:bg-gray-200 transition-colors"
                   >
                     العودة للرئيسية
                   </button>
@@ -807,35 +809,36 @@ function App() {
 
   const renderTestSuccess = () => {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-400 via-green-500 to-teal-600 p-4">
-        <div className="max-w-md mx-auto">
-          <div className="bg-white rounded-2xl shadow-xl p-6 text-center">
-            <div className="bg-green-100 p-6 rounded-xl mb-6">
-              <div className="text-green-500 text-7xl mb-4">🎉</div>
-              <h2 className="text-2xl font-bold text-green-800 mb-3">مبروك! أجتزت الاختبار</h2>
-              <p className="text-green-700 mb-4">لقد أجبت بشكل صحيح على جميع الكلمات</p>
-              <div className="bg-green-50 rounded-lg p-4 mb-6">
-                <p className="text-green-800 text-sm">استمر في الممارسة للحفاظ على مستواك الممتاز</p>
-              </div>
-              
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                <div className="h-2 w-2 rounded-full bg-green-500"></div>
+      <div className="min-h-screen bg-gradient-to-br from-green-400 via-green-500 to-teal-600 p-4 flex items-center justify-center">
+        <div className="max-w-md w-full mx-auto">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 sm:p-10 text-center flex flex-col items-center">
+            <div className="bg-green-100 p-8 rounded-full mb-6 flex flex-col items-center justify-center shadow-lg">
+              <div className="text-green-500 text-7xl mb-2 animate-bounce">🎉</div>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="h-3 w-3 rounded-full bg-green-400"></div>
+                <div className="h-3 w-3 rounded-full bg-green-400"></div>
+                <div className="h-3 w-3 rounded-full bg-green-400"></div>
               </div>
             </div>
-            
-            <div className="space-y-3">
+            <h2 className="text-3xl font-extrabold text-green-800 mb-3">مبروك! أجتزت الاختبار بنجاح</h2>
+            <p className="text-green-700 mb-4 text-lg">لقد أجبت بشكل صحيح على جميع الكلمات في هذا الاختبار 🎯</p>
+            <div className="bg-green-50 rounded-xl p-4 mb-6 shadow">
+              <p className="text-green-800 text-base font-medium">استمر في الممارسة للحفاظ على مستواك الممتاز، كلما تدربت أكثر زادت مهارتك! 💪</p>
+            </div>
+            <div className="mb-6">
+              <span className="text-green-600 font-bold">نسبة النجاح: </span>
+              <span className="text-green-700 text-xl font-extrabold">100%</span>
+            </div>
+            <div className="space-y-3 w-full">
               <button
                 onClick={() => setCurrentView('add')}
-                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-xl font-medium hover:from-blue-600 hover:to-purple-700 transition-all"
+                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-xl font-bold text-lg hover:from-blue-600 hover:to-purple-700 transition-all shadow"
               >
                 إضافة كلمات جديدة
               </button>
-              
               <button
                 onClick={() => setCurrentView('home')}
-                className="w-full bg-gray-100 text-gray-700 py-3 rounded-xl font-medium hover:bg-gray-200 transition-colors"
+                className="w-full bg-gray-100 text-gray-700 py-3 rounded-xl font-bold text-lg hover:bg-gray-200 transition-colors shadow"
               >
                 العودة للرئيسية
               </button>
@@ -1118,16 +1121,26 @@ function App() {
                 </button>
               </>
             ) : (
-              <div className="text-center">
-                <div className={`p-6 rounded-xl mb-6 ${isCorrect ? 'bg-yellow-50 border-2 border-yellow-200' : 'bg-red-50 border-2 border-red-200'}`}>
-                  <div className={`text-6xl mb-3 ${isCorrect ? 'text-yellow-500' : 'text-red-500'}`}>{isCorrect ? '✅' : '❌'}</div>
-                  <div className="text-lg font-bold mb-2">{isCorrect ? 'إجابة صحيحة!' : 'إجابة خاطئة'}</div>
-                  <div className="text-gray-700">
-                    <div className="mb-1" dir="ltr"><strong>{currentTestWord.english}</strong></div>
-                    <div dir="rtl">المعنى الصحيح: <strong>{currentTestWord.arabic}</strong></div>
+              <div className="flex flex-col items-center justify-center text-center w-full gap-4">
+                <div className={`flex flex-col items-center justify-center p-6 sm:p-8 rounded-2xl mb-6 shadow-lg border transition-all duration-300 ${isCorrect ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}
+                  style={{ minWidth: '220px', maxWidth: '400px', margin: '0 auto' }}>
+                  <div className={`flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full mb-4 shadow-lg ${isCorrect ? 'bg-green-100' : 'bg-red-100'}`}> 
+                    <span className={`text-4xl sm:text-5xl ${isCorrect ? 'text-green-500' : 'text-red-500'}`}>{isCorrect ? '✅' : '❌'}</span>
                   </div>
+                  <div className={`text-xl sm:text-2xl font-bold mb-2 ${isCorrect ? 'text-green-700' : 'text-red-700'}`}>{isCorrect ? 'إجابة صحيحة!' : 'إجابة خاطئة'}</div>
+                  <div className="text-gray-700 text-base sm:text-lg mb-1 font-semibold" dir="ltr"><strong>{currentTestWord.english}</strong></div>
+                  <div className="text-gray-600 text-sm sm:text-base" dir="rtl">المعنى الصحيح: <strong>{currentTestWord.arabic}</strong></div>
+                  {isCorrect ? (
+                    <div className="bg-green-50 rounded-xl p-3 mt-2 shadow text-green-700 text-sm sm:text-base font-medium animate-fade-in">
+                      رائع! استمر في هذا الأداء المميز، كل إجابة صحيحة تقربك من إتقان اللغة أكثر 💪✨
+                    </div>
+                  ) : (
+                    <div className="bg-red-50 rounded-xl p-3 mt-2 shadow text-red-700 text-sm sm:text-base font-medium animate-fade-in">
+                      لا تقلق! الخطأ جزء من التعلم، حاول مرة أخرى وستتحسن مهاراتك مع الوقت 🚀
+                    </div>
+                  )}
                 </div>
-                <div className="space-y-3">
+                <div className="flex flex-col gap-3 w-full max-w-xs sm:max-w-sm mx-auto">
                   <button
                     onClick={nextCustomQuestion}
                     className="w-full bg-gradient-to-r from-yellow-500 to-orange-600 text-white py-3 rounded-xl font-medium hover:from-yellow-600 hover:to-orange-700 transition-all"
@@ -1135,7 +1148,7 @@ function App() {
                     كلمة أخرى
                   </button>
                   <button
-                    onClick={() => { setCurrentView('custom-levels'); setIsCustomTest(false); setSelectedLevel(null); }}
+                    onClick={() => { setCurrentView('custom-levels'); }}
                     className="w-full bg-gray-100 text-gray-700 py-3 rounded-xl font-medium hover:bg-gray-200 transition-colors"
                   >
                     العودة للمستويات
@@ -1175,6 +1188,7 @@ function App() {
     } catch (error) {
       setError('خطأ في تعديل المستوى. تأكد من الاتصال بالخادم أو أن اسم المستوى غير مكرر.');
       setIsOnline(false);
+      console.error('Error updating custom level:', error);
     } finally {
       setLoading(false);
     }
