@@ -41,6 +41,7 @@ function App() {
     );
   };
   const [words, setWords] = useState<Word[]>([]);
+  const [searchWordForLevel, setSearchWordForLevel] = useState("");
   const [currentView, setCurrentView] = useState<View>("home");
   const [englishInput, setEnglishInput] = useState("");
   const [arabicInput, setArabicInput] = useState("");
@@ -63,6 +64,7 @@ function App() {
 
   // مستويات الاختبار المخصص
   const [customLevels, setCustomLevels] = useState<CustomLevel[]>([]);
+  const [customLevel, setCustomLevel] = useState<CustomLevel | null>(null);
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
   const [showLevelForm, setShowLevelForm] = useState(false);
   const [newLevelName, setNewLevelName] = useState("");
@@ -339,6 +341,7 @@ function App() {
         wordIds: selectedWordsForLevel,
         attempts: 0,
         correctAnswers: 0,
+        type: customTab === "english" ? 1 : 2,
       };
       const savedLevel = await WordsAPI.addCustomLevel(newLevel);
       setCustomLevels((prev) => [...prev, savedLevel]);
@@ -360,9 +363,11 @@ function App() {
     const wordsForLevel = words.filter((word) =>
       level.wordIds.includes(word.id)
     );
+
     setCustomTestWords([...wordsForLevel]);
     setSelectedLevel(level.name);
     setCurrentView("custom-test");
+    setCustomLevel(level);
     // اختيار كلمة عشوائية من المستوى
     if (wordsForLevel.length > 0) {
       const randomIndex = Math.floor(Math.random() * wordsForLevel.length);
@@ -375,8 +380,12 @@ function App() {
   const checkCustomAnswer = async () => {
     if (!currentTestWord || !selectedLevel) return;
     setIsCheckingCustomAnswer(true);
+    // type:1  => english :
     const isAnswerCorrect =
-      userAnswer.trim().toLowerCase() === currentTestWord.arabic.toLowerCase();
+      userAnswer.trim().toLowerCase() ===
+      (customLevel?.type === 1
+        ? currentTestWord.arabic.toLowerCase()
+        : currentTestWord.english.match(/[a-zA-Z-]+/g)?.[0].toLowerCase());
     setIsCorrect(isAnswerCorrect);
     setShowResult(true);
     try {
@@ -1250,26 +1259,69 @@ function App() {
     );
   };
 
+  // const englishCustomLevels = customLevels.filter(
+  //   (level) =>
+  //     level.wordIds.length > 0 &&
+  //     level.wordIds.every((id) => englishWordIds.includes(id))
+  // );
+  const englishCustomLevels = customLevels.filter(
+    (level) => level.wordIds.length > 0 && level.type === 1
+  );
+  const arabicCustomLevels = customLevels.filter((level) => level.type === 2);
+  // عكس الترتيب: الأول إنجليزي ثم عربي
+  const [customTab, setCustomTab] = useState<"english" | "arabic">("english");
   const renderCustomLevels = () => (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-yellow-400 via-yellow-500 to-orange-600 p-4">
       <div className="max-w-2xl w-full mx-auto">
+        <div className="flex gap-2 mb-6">
+          <button
+            className={`flex-1 py-2 rounded-xl font-bold text-lg transition-all ${
+              customTab === "english"
+                ? "bg-yellow-500 text-white"
+                : "bg-white text-yellow-700 border border-yellow-300"
+            }`}
+            onClick={() => setCustomTab("english")}
+          >
+            مستويات إنجليزي
+          </button>
+          <button
+            className={`flex-1 py-2 rounded-xl font-bold text-lg transition-all ${
+              customTab === "arabic"
+                ? "bg-yellow-500 text-white"
+                : "bg-white text-yellow-700 border border-yellow-300"
+            }`}
+            onClick={() => setCustomTab("arabic")}
+          >
+            مستويات عربي
+          </button>
+        </div>
         <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
           <h2 className="text-xl font-bold text-gray-800 mb-2">
-            الاختبارات المخصصة
+            {customTab === "english"
+              ? "الاختبارات المخصصة للإنجليزي"
+              : "الاختبارات المخصصة للعربي"}
           </h2>
           <p className="text-gray-600 text-sm mb-4">
-            أنشئ مستوياتك الخاصة وأضف كلمات من القائمة المحفوظة
+            {customTab === "english"
+              ? "أنشئ مستوياتك الخاصة وأضف كلمات إنجليزية من القائمة المحفوظة"
+              : "أنشئ مستوياتك الخاصة وأضف كلمات عربية من القائمة المحفوظة"}
           </p>
           <button
             onClick={() => setShowLevelForm(true)}
             className="bg-yellow-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-yellow-600 transition-colors mb-4"
           >
-            إضافة مستوى جديد
+            {customTab === "english"
+              ? "إضافة مستوى إنجليزي جديد"
+              : "إضافة مستوى عربي جديد"}
           </button>
-          {customLevels.length === 0 && (
+          {(customTab === "english" ? englishCustomLevels : arabicCustomLevels)
+            .length === 0 && (
             <div className="text-gray-500 mb-4">لا توجد مستويات بعد</div>
           )}
-          {customLevels.map((level) => {
+          {(customTab === "english"
+            ? englishCustomLevels
+            : arabicCustomLevels
+          ).map((level) => {
             const stats = getLevelStats(level);
             return (
               <div
@@ -1330,38 +1382,57 @@ function App() {
               className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4"
               placeholder="اسم المستوى (مثلاً: مبتدئ، متوسط، صعب)"
             />
+            {/* مربع البحث عن الكلمات */}
+            <input
+              type="text"
+              value={searchWordForLevel}
+              onChange={(e) => setSearchWordForLevel(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4"
+              placeholder="ابحث عن كلمة (إنجليزي أو عربي) ..."
+            />
             <div className="mb-4">
               <div className="font-bold mb-2">
-                اختر الكلمات من القائمة المحفوظة:
+                {customTab === "english"
+                  ? "اختر الكلمات الإنجليزية من القائمة المحفوظة:"
+                  : "اختر الكلمات العربية من القائمة المحفوظة:"}
               </div>
               <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
-                {words.map((word) => (
-                  <label
-                    key={word.id}
-                    className="flex items-center gap-2 bg-gray-50 rounded-lg px-2 py-1"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedWordsForLevel.includes(word.id)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedWordsForLevel((prev) => [
-                            ...prev,
-                            word.id,
-                          ]);
-                        } else {
-                          setSelectedWordsForLevel((prev) =>
-                            prev.filter((id) => id !== word.id)
-                          );
-                        }
-                      }}
-                    />
-                    <span className="text-blue-700 font-bold">
-                      {word.english}
-                    </span>
-                    <span className="text-gray-600">{word.arabic}</span>
-                  </label>
-                ))}
+                {words
+                  .filter((word) => {
+                    if (!searchWordForLevel) return true;
+                    const search = searchWordForLevel.toLowerCase();
+                    return (
+                      word.english.toLowerCase().includes(search) ||
+                      word.arabic.toLowerCase().includes(search)
+                    );
+                  })
+                  .map((word) => (
+                    <label
+                      key={word.id}
+                      className="flex items-center gap-2 bg-gray-50 rounded-lg px-2 py-1"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedWordsForLevel.includes(word.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedWordsForLevel((prev) => [
+                              ...prev,
+                              word.id,
+                            ]);
+                          } else {
+                            setSelectedWordsForLevel((prev) =>
+                              prev.filter((id) => id !== word.id)
+                            );
+                          }
+                        }}
+                      />
+                      <span className="text-blue-700 font-bold">
+                        {word.english}
+                      </span>
+                      <span className="text-gray-600">{word.arabic}</span>
+                    </label>
+                  ))}
               </div>
             </div>
             <button
@@ -1459,7 +1530,8 @@ function App() {
                     اختبار مستوى: {selectedLevel}
                   </h2>
                   <p className="text-gray-600 text-sm">
-                    ما معنى هذه الكلمة بالعربية؟
+                    ما معنى هذه الكلمة ب
+                    {customLevel?.type === 1 ? "العربية" : "الإنجليزية"}؟
                   </p>
                 </div>
                 <div className="text-center mb-6">
@@ -1468,7 +1540,9 @@ function App() {
                       className="text-3xl font-bold text-yellow-600 mb-2"
                       dir="ltr"
                     >
-                      {currentTestWord.english}
+                      {customLevel?.type === 1
+                        ? currentTestWord.english
+                        : currentTestWord.arabic}
                     </div>
                   </div>
                   <input
@@ -1594,6 +1668,7 @@ function App() {
         wordIds: editLevelWords,
         attempts: editingLevel.attempts || 0,
         correctAnswers: editingLevel.correctAnswers || 0,
+        type: editingLevel.type || 1, // إذا كان قديمًا، اعتبره عربي افتراضيًا
       };
       const savedLevel = await WordsAPI.addCustomLevel(updatedLevel);
       setCustomLevels((prev) =>

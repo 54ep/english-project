@@ -21,8 +21,9 @@
       "1756224470549",
       "1756224604211"
     ],
-    "attempts": 1,
-    "correctAnswers": 1
+    "attempts": 4,
+    "correctAnswers": 3,
+    "type": 1
   },
   {
     "name": "المستوى الاول ب",
@@ -67,7 +68,8 @@
       "1756301138071"
     ],
     "attempts": 132,
-    "correctAnswers": 115
+    "correctAnswers": 115,
+    "type": 1
   },
   {
     "name": "المستوى الأول ج",
@@ -104,7 +106,8 @@
       "1756387966690"
     ],
     "attempts": 41,
-    "correctAnswers": 30
+    "correctAnswers": 30,
+    "type": 1
   },
   {
     "name": "المستوى الثاني أ",
@@ -142,7 +145,8 @@
       "1757262857406"
     ],
     "attempts": 55,
-    "correctAnswers": 31
+    "correctAnswers": 31,
+    "type": 1
   },
   {
     "name": "المستوى الثاني ب",
@@ -159,7 +163,8 @@
       "1757263462426"
     ],
     "attempts": 17,
-    "correctAnswers": 10
+    "correctAnswers": 10,
+    "type": 1
   },
   {
     "name": "يوتيوب",
@@ -202,7 +207,8 @@
       "1756796575675"
     ],
     "attempts": 0,
-    "correctAnswers": 0
+    "correctAnswers": 0,
+    "type": 1
   },
   {
     "name": "المستوى الثاني ج",
@@ -227,7 +233,8 @@
       "1757340748995"
     ],
     "attempts": 23,
-    "correctAnswers": 18
+    "correctAnswers": 18,
+    "type": 1
   },
   {
     "name": "يوتيوب 2",
@@ -289,7 +296,8 @@
       "1757924958236"
     ],
     "attempts": 0,
-    "correctAnswers": 0
+    "correctAnswers": 0,
+    "type": 1
   },
   {
     "name": "المستوى الثالث أ",
@@ -320,7 +328,8 @@
       "1758004561685"
     ],
     "attempts": 35,
-    "correctAnswers": 24
+    "correctAnswers": 24,
+    "type": 1
   },
   {
     "name": "المستوى الثالث ب",
@@ -357,7 +366,8 @@
       "1758006227598"
     ],
     "attempts": 47,
-    "correctAnswers": 30
+    "correctAnswers": 30,
+    "type": 1
   },
   {
     "name": "المستوى الثالث ج",
@@ -374,7 +384,8 @@
       "1758178631126"
     ],
     "attempts": 0,
-    "correctAnswers": 0
+    "correctAnswers": 0,
+    "type": 1
   },
   {
     "name": "المستوى الرابع أ",
@@ -393,6 +404,7 @@
       "1758443467182"
     ],
     "attempts": 0,
-    "correctAnswers": 0
+    "correctAnswers": 0,
+    "type": 1
   }
 ]

@@ -16,6 +16,7 @@ export interface CustomLevel {
   wordIds: string[];
   attempts: number;
   correctAnswers: number;
+  type?: 1 | 2; // 1 = انجليزي، 2 = عربي
 }
 
 class WordsAPI {
