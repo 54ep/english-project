@@ -1,5 +1,5 @@
 const PORT = 3000;
-const API_BASE_URL = `http://localhost:${PORT}/api`;
+const API_BASE_URL = '/api'; // `http://localhost:${PORT}/api`; # for Localhosts
 
 export interface Word {
   id: string;
