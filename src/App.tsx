@@ -311,6 +311,24 @@ function App() {
     );
   };
 
+  // حالة وتقسيم صفحات الأخطاء
+  const [currentErrorPage, setCurrentErrorPage] = useState(1);
+  const errorWordsPerPage = 10;
+  const errorWords = getErrorWords();
+  const totalErrorPages = Math.ceil(errorWords.length / errorWordsPerPage);
+  const paginatedErrorWords = errorWords.slice(
+    (currentErrorPage - 1) * errorWordsPerPage,
+    currentErrorPage * errorWordsPerPage
+  );
+
+  // إذا حذفنا كلمة من الصفحة الأخيرة وصارت فارغة، نرجع للصفحة السابقة
+  useEffect(() => {
+    if (currentErrorPage > 1 && paginatedErrorWords.length === 0) {
+      setCurrentErrorPage(currentErrorPage - 1);
+    }
+    // eslint-disable-next-line
+  }, [errorWords.length]);
+
   const addCustomLevel = async () => {
     if (!newLevelName.trim() || selectedWordsForLevel.length === 0) return;
     try {
@@ -1084,8 +1102,6 @@ function App() {
   };
 
   const renderErrorsView = () => {
-    const errorWords = getErrorWords();
-
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-400 via-red-500 to-pink-500 p-4 flex items-center justify-center">
         <div className="max-w-4xl w-full mx-auto">
@@ -1104,7 +1120,7 @@ function App() {
           {errorWords.length > 0 ? (
             <>
               <div className="space-y-3 mb-6">
-                {errorWords.map((word) => (
+                {paginatedErrorWords.map((word) => (
                   <div
                     key={word.id}
                     className="bg-white rounded-xl shadow-lg p-4"
@@ -1138,10 +1154,56 @@ function App() {
                           %
                         </div>
                       </div>
+                      <button
+                        onClick={() => deleteWord(word.id)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors ml-2"
+                        title="حذف الكلمة"
+                      >
+                        <Trash2 size={18} />
+                      </button>
                     </div>
                   </div>
                 ))}
               </div>
+
+              {/* Pagination controls */}
+              {totalErrorPages > 1 && (
+                <div className="flex justify-center items-center gap-2 mb-6">
+                  <button
+                    onClick={() =>
+                      setCurrentErrorPage((p) => Math.max(1, p - 1))
+                    }
+                    disabled={currentErrorPage === 1}
+                    className="px-3 py-1 rounded-lg bg-white text-red-600 border border-red-200 hover:bg-red-50 disabled:opacity-50"
+                  >
+                    السابق
+                  </button>
+                  {Array.from({ length: totalErrorPages }, (_, i) => (
+                    <button
+                      key={i + 1}
+                      onClick={() => setCurrentErrorPage(i + 1)}
+                      className={`px-3 py-1 rounded-lg border ${
+                        currentErrorPage === i + 1
+                          ? "bg-red-600 text-white border-red-600"
+                          : "bg-white text-red-600 border-red-200 hover:bg-red-50"
+                      }`}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() =>
+                      setCurrentErrorPage((p) =>
+                        Math.min(totalErrorPages, p + 1)
+                      )
+                    }
+                    disabled={currentErrorPage === totalErrorPages}
+                    className="px-3 py-1 rounded-lg bg-white text-red-600 border border-red-200 hover:bg-red-50 disabled:opacity-50"
+                  >
+                    التالي
+                  </button>
+                </div>
+              )}
 
               <div className="flex flex-col items-center gap-4 mb-6">
                 <button
