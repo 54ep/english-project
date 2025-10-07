@@ -29,6 +29,9 @@ type View =
   | "arabic-test"; // Add "arabic-test" to the View type
 
 function App() {
+  // ترقيم صفحات المستويات المخصصة
+  const [customLevelsPage, setCustomLevelsPage] = useState(1);
+  const LEVELS_PER_PAGE = 6;
   // عرض قسم اختبار العربي (يجب أن تكون داخل App للوصول إلى setCurrentView)
   const renderArabicTest = () => {
     // تحويل الكلمات من قاعدة البيانات إلى الشكل المطلوب
@@ -1314,58 +1317,95 @@ function App() {
               ? "إضافة مستوى إنجليزي جديد"
               : "إضافة مستوى عربي جديد"}
           </button>
-          {(customTab === "english" ? englishCustomLevels : arabicCustomLevels)
-            .length === 0 && (
-            <div className="text-gray-500 mb-4">لا توجد مستويات بعد</div>
-          )}
-          {(customTab === "english"
-            ? englishCustomLevels
-            : arabicCustomLevels
-          ).map((level) => {
-            const stats = getLevelStats(level);
+          {(() => {
+            const allLevels =
+              customTab === "english"
+                ? englishCustomLevels
+                : arabicCustomLevels;
+            if (allLevels.length === 0) {
+              return (
+                <div className="text-gray-500 mb-4">لا توجد مستويات بعد</div>
+              );
+            }
+            // حساب حدود الصفحة الحالية
+            const startIdx = (customLevelsPage - 1) * LEVELS_PER_PAGE;
+            const endIdx = startIdx + LEVELS_PER_PAGE;
+            const pagedLevels = allLevels.slice(startIdx, endIdx);
             return (
-              <div
-                key={level.name}
-                className="bg-yellow-50 rounded-xl p-4 mb-3 flex items-center justify-between"
-              >
-                <div>
-                  <div className="font-bold text-yellow-700">{level.name}</div>
-                  <div className="text-xs text-gray-600">
-                    عدد الكلمات: {level.wordIds.length}
-                  </div>
-                  <div className="text-xs text-gray-600">
-                    إجمالي المحاولات: {stats.attempts}
-                  </div>
-                  <div className="text-xs text-gray-600">
-                    إجابات صحيحة: {stats.correct}
-                  </div>
-                  <div className="text-xs text-gray-600">
-                    نسبة النجاح: {stats.accuracy}%
-                  </div>
+              <>
+                {pagedLevels.map((level) => {
+                  const stats = getLevelStats(level);
+                  return (
+                    <div
+                      key={level.name}
+                      className="bg-yellow-50 rounded-xl p-4 mb-3 flex items-center justify-between"
+                    >
+                      <div>
+                        <div className="font-bold text-yellow-700">
+                          {level.name}
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          عدد الكلمات: {level.wordIds.length}
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          إجمالي المحاولات: {stats.attempts}
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          إجابات صحيحة: {stats.correct}
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          نسبة النجاح: {stats.accuracy}%
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => startCustomTest(level)}
+                          className="bg-yellow-600 text-white px-3 py-1 rounded-lg font-medium hover:bg-yellow-700 transition-colors"
+                        >
+                          بدء اختبار المستوى
+                        </button>
+                        <button
+                          onClick={() => startEditLevel(level)}
+                          className="bg-blue-500 text-white px-3 py-1 rounded-lg font-medium hover:bg-blue-600 transition-colors"
+                        >
+                          تعديل
+                        </button>
+                        <button
+                          onClick={() => deleteCustomLevel(level.name)}
+                          className="bg-red-500 text-white px-3 py-1 rounded-lg font-medium hover:bg-red-600 transition-colors"
+                        >
+                          حذف
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+                {/* أزرار الترقيم */}
+                <div className="flex justify-center gap-2 mt-4">
+                  <button
+                    onClick={() =>
+                      setCustomLevelsPage((p) => Math.max(1, p - 1))
+                    }
+                    disabled={customLevelsPage === 1}
+                    className="px-3 py-1 rounded-lg bg-gray-200 text-gray-700 font-bold disabled:opacity-50"
+                  >
+                    السابق
+                  </button>
+                  <span className="px-3 py-1 font-bold">
+                    صفحة {customLevelsPage} من{" "}
+                    {Math.ceil(allLevels.length / LEVELS_PER_PAGE)}
+                  </span>
+                  <button
+                    onClick={() => setCustomLevelsPage((p) => p + 1)}
+                    disabled={endIdx >= allLevels.length}
+                    className="px-3 py-1 rounded-lg bg-gray-200 text-gray-700 font-bold disabled:opacity-50"
+                  >
+                    التالي
+                  </button>
                 </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => startCustomTest(level)}
-                    className="bg-yellow-600 text-white px-3 py-1 rounded-lg font-medium hover:bg-yellow-700 transition-colors"
-                  >
-                    بدء اختبار المستوى
-                  </button>
-                  <button
-                    onClick={() => startEditLevel(level)}
-                    className="bg-blue-500 text-white px-3 py-1 rounded-lg font-medium hover:bg-blue-600 transition-colors"
-                  >
-                    تعديل
-                  </button>
-                  <button
-                    onClick={() => deleteCustomLevel(level.name)}
-                    className="bg-red-500 text-white px-3 py-1 rounded-lg font-medium hover:bg-red-600 transition-colors"
-                  >
-                    حذف
-                  </button>
-                </div>
-              </div>
+              </>
             );
-          })}
+          })()}
         </div>
         {showLevelForm && (
           <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
