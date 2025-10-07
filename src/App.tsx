@@ -295,6 +295,14 @@ function App() {
     return { totalWords, totalAttempts, correctAnswers, accuracy };
   };
 
+  // دالة إعادة تعيين عداد الإجابات الصحيحة
+  const resetCorrectAnswers = () => {
+    // إعادة تعيين correctAnswers لكل كلمة إلى 0
+    const updatedWords = words.map((word) => ({ ...word, correctAnswers: 0 }));
+    setWords(updatedWords);
+    // إذا كان لديك API لحفظ التغيير في الخادم يمكنك إضافته هنا
+  };
+
   // الحصول على الكلمات التي أخطأ المستخدم فيها
   const getErrorWords = () => {
     return words.filter(
@@ -512,8 +520,19 @@ function App() {
               <div className="text-sm opacity-90">نسبة النجاح</div>
             </div>
             <div className="bg-gradient-to-r from-green-400 to-green-500 text-white p-4 rounded-2xl text-center">
-              <div className="text-2xl font-bold">{stats.correctAnswers}</div>
+              <div className="flex flex-col items-center gap-2">
+                <span className="text-2xl font-bold">
+                  {stats.correctAnswers}
+                </span>
+              </div>
               <div className="text-sm opacity-90">إجابات صحيحة</div>
+              <button
+                onClick={resetCorrectAnswers}
+                className="mt-1 px-3 py-1 bg-white text-green-600 rounded-full text-xs font-bold shadow hover:bg-green-50 border border-green-200 transition"
+                title="إعادة تعيين عداد الإجابات الصحيحة"
+              >
+                إعادة تعيين
+              </button>
             </div>
             <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 rounded-2xl text-center">
               <div className="text-2xl font-bold">{stats.totalWords}</div>
