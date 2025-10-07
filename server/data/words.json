@@ -4,24 +4,24 @@
     "english": "book",
     "arabic": "كتاب",
     "dateAdded": "٢٣‏/٨‏/٢٠٢٥",
-    "correctAnswers": 19,
-    "totalAttempts": 22
+    "correctAnswers": 22,
+    "totalAttempts": 26
   },
   {
     "id": "1755951309345",
     "english": "science",
     "arabic": "علم",
     "dateAdded": "٢٣‏/٨‏/٢٠٢٥",
-    "correctAnswers": 10,
-    "totalAttempts": 13
+    "correctAnswers": 11,
+    "totalAttempts": 14
   },
   {
     "id": "1755951524250",
     "english": "Art",
     "arabic": "فن",
     "dateAdded": "٢٣‏/٨‏/٢٠٢٥",
-    "correctAnswers": 20,
-    "totalAttempts": 27
+    "correctAnswers": 22,
+    "totalAttempts": 29
   },
   {
     "id": "1756224023131",
@@ -60,8 +60,8 @@
     "english": "dollar\tدُولَر",
     "arabic": "دولار",
     "dateAdded": "٢٦‏/٨‏/٢٠٢٥",
-    "correctAnswers": 3,
-    "totalAttempts": 3
+    "correctAnswers": 5,
+    "totalAttempts": 5
   },
   {
     "id": "1756224133890",
@@ -101,7 +101,7 @@
     "arabic": "كثير",
     "dateAdded": "٢٦‏/٨‏/٢٠٢٥",
     "correctAnswers": 2,
-    "totalAttempts": 3
+    "totalAttempts": 4
   },
   {
     "id": "1756224210391",
