@@ -4,6 +4,7 @@ dotenv.config();
 import express from "express";
 import cors from "cors";
 import path from "path";
+import fs from "fs/promises";
 
 import { kv } from "@vercel/kv";
 import { fileURLToPath } from "url";
@@ -313,4 +314,53 @@ async function startServer() {
   }
 }
 
+// Take a backup from database
+async function backup() {
+  try {
+    const words = await kv.get(WORDS_FILE);
+    const levels = await kv.get(CUSTOM_LEVELS_FILE);
+
+    // Create backup directory if it doesn't exist
+    const backupDir = path.join(__dirname, "backups");
+    await fs.mkdir(backupDir, { recursive: true });
+
+    // Create timestamp for backup files
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+
+    // Save words backup
+    const wordsBackupPath = path.join(
+      backupDir,
+      `words-backup-${timestamp}.json`
+    );
+    await fs.writeFile(wordsBackupPath, JSON.stringify(words, null, 2));
+
+    // Save custom levels backup
+    const levelsBackupPath = path.join(
+      backupDir,
+      `custom-levels-backup-${timestamp}.json`
+    );
+    await fs.writeFile(levelsBackupPath, JSON.stringify(levels, null, 2));
+
+    console.log(`Backup created successfully at ${timestamp}`);
+    console.log(`- Words: ${wordsBackupPath}`);
+    console.log(`- Levels: ${levelsBackupPath}`);
+
+    return {
+      success: true,
+      timestamp,
+      files: {
+        words: wordsBackupPath,
+        levels: levelsBackupPath,
+      },
+    };
+  } catch (err) {
+    console.error("Error creating backup:", err);
+    return {
+      success: false,
+      error: err.message,
+    };
+  }
+}
+
+backup();
 startServer();
