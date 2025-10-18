@@ -303,13 +303,11 @@ app.get("*", (req, res) => {
 
 app.get("/api/cron", async (req, res) => {
   const result = await backup();
-  return res
-    .status(200)
-    .json({
-      ok: result.success,
-      timestamp: result.timestamp,
-      error: result.error,
-    });
+  res.status(200).json({
+    ok: result.success,
+    timestamp: result.timestamp,
+    error: result.error,
+  });
 });
 
 // Take a backup from database
