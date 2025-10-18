@@ -4,7 +4,7 @@ dotenv.config();
 import express from "express";
 import cors from "cors";
 import path from "path";
-import fs from "fs/promises";
+import { createClient } from "@supabase/supabase-js";
 
 import { kv } from "@vercel/kv";
 import { fileURLToPath } from "url";
@@ -301,6 +301,45 @@ app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "../dist/index.html"));
 });
 
+// Take a backup from database
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+async function backup() {
+  try {
+    const words = await kv.get("words");
+    const levels = await kv.get("custom-levels");
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+
+    const wordsFile = `${timestamp}/words-backup.json`;
+    const levelsFile = `${timestamp}/levels-backup.json`;
+
+    let res = await supabase.storage
+      .from("backups")
+      .upload(wordsFile, JSON.stringify(words, null, 2), {
+        upsert: false,
+        contentType: "application/json",
+      });
+    if (res.error) throw res.error;
+
+    res = await supabase.storage
+      .from("backups")
+      .upload(levelsFile, JSON.stringify(levels, null, 2), {
+        upsert: false,
+        contentType: "application/json",
+      });
+    if (res.error) throw res.error;
+
+    console.log(`✅ Backup uploaded at ${timestamp}`);
+    return { success: true, timestamp };
+  } catch (err) {
+    console.error("❌ Backup error:", err);
+    return { success: false, error: err.message };
+  }
+}
+
 // Initialize and start server
 async function startServer() {
   try {
@@ -308,59 +347,12 @@ async function startServer() {
       console.log(`🚀 Server running on http://localhost:${PORT}`);
       console.log(`📚 Words data stored in: ${WORDS_FILE}`);
       console.log(`📊 Custom levels stored in: ${CUSTOM_LEVELS_FILE}`);
+
+      // Take a backup every 1 week server start
+      setInterval(backup, 7 * 24 * 60 * 60 * 1000);
     });
   } catch (error) {
     console.error("Error starting server:", error);
   }
 }
-
-// Take a backup from database
-async function backup() {
-  try {
-    const words = await kv.get(WORDS_FILE);
-    const levels = await kv.get(CUSTOM_LEVELS_FILE);
-
-    // Create backup directory if it doesn't exist
-    const backupDir = path.join(__dirname, "backups");
-    await fs.mkdir(backupDir, { recursive: true });
-
-    // Create timestamp for backup files
-    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-
-    // Save words backup
-    const wordsBackupPath = path.join(
-      backupDir,
-      `words-backup-${timestamp}.json`
-    );
-    await fs.writeFile(wordsBackupPath, JSON.stringify(words, null, 2));
-
-    // Save custom levels backup
-    const levelsBackupPath = path.join(
-      backupDir,
-      `custom-levels-backup-${timestamp}.json`
-    );
-    await fs.writeFile(levelsBackupPath, JSON.stringify(levels, null, 2));
-
-    console.log(`Backup created successfully at ${timestamp}`);
-    console.log(`- Words: ${wordsBackupPath}`);
-    console.log(`- Levels: ${levelsBackupPath}`);
-
-    return {
-      success: true,
-      timestamp,
-      files: {
-        words: wordsBackupPath,
-        levels: levelsBackupPath,
-      },
-    };
-  } catch (err) {
-    console.error("Error creating backup:", err);
-    return {
-      success: false,
-      error: err.message,
-    };
-  }
-}
-
-backup();
 startServer();
