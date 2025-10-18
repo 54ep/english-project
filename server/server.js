@@ -349,6 +349,7 @@ async function startServer() {
       console.log(`📊 Custom levels stored in: ${CUSTOM_LEVELS_FILE}`);
 
       // Take a backup every 1 week server start
+      backup();
       setInterval(backup, 7 * 24 * 60 * 60 * 1000);
     });
   } catch (error) {
