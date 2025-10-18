@@ -1,7 +1,11 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import express from "express";
 import cors from "cors";
-import fs from "fs/promises";
 import path from "path";
+
+import { kv } from "@vercel/kv";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -10,6 +14,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+const WORDS_FILE = "words";
+const CUSTOM_LEVELS_FILE = "custom-levels";
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -17,46 +24,11 @@ app.use(express.json());
 // عرض الملفات الثابتة للتطبيق المبني
 app.use(express.static(path.join(__dirname, "../dist")));
 
-// Path to the JSON file where words will be stored
-const WORDS_FILE = path.join(__dirname, "data", "words.json");
-
-// Path to the JSON file for custom levels
-const CUSTOM_LEVELS_FILE = path.join(__dirname, "data", "custom-levels.json");
-
-// Ensure data directory exists
-async function ensureDataDirectory() {
-  const dataDir = path.dirname(WORDS_FILE);
-  try {
-    await fs.access(dataDir);
-  } catch {
-    await fs.mkdir(dataDir, { recursive: true });
-  }
-}
-
-// Initialize the words file if it doesn't exist
-async function initializeWordsFile() {
-  try {
-    await fs.access(WORDS_FILE);
-  } catch {
-    // File doesn't exist, create it with empty array
-    await fs.writeFile(WORDS_FILE, JSON.stringify([], null, 2));
-  }
-}
-
-// Initialize the custom levels file if it doesn't exist
-async function initializeCustomLevelsFile() {
-  try {
-    await fs.access(CUSTOM_LEVELS_FILE);
-  } catch {
-    await fs.writeFile(CUSTOM_LEVELS_FILE, JSON.stringify([], null, 2));
-  }
-}
-
 // Read words from JSON file
 async function readWords() {
   try {
-    const data = await fs.readFile(WORDS_FILE, "utf8");
-    return JSON.parse(data);
+    const data = await kv.get(WORDS_FILE);
+    return data;
   } catch (error) {
     console.error("Error reading words file:", error);
     return [];
@@ -66,7 +38,7 @@ async function readWords() {
 // Write words to JSON file
 async function writeWords(words) {
   try {
-    await fs.writeFile(WORDS_FILE, JSON.stringify(words, null, 2));
+    await kv.set(WORDS_FILE, JSON.stringify(words, null, 2));
     return true;
   } catch (error) {
     console.error("Error writing words file:", error);
@@ -77,9 +49,9 @@ async function writeWords(words) {
 // Read custom levels from JSON file
 async function readCustomLevels() {
   try {
-    const data = await fs.readFile(CUSTOM_LEVELS_FILE, "utf8");
+    const data = await kv.get(CUSTOM_LEVELS_FILE);
     // add level type if missing for backward compatibility
-    const levels = JSON.parse(data);
+    const levels = data;
     levels.forEach((level) => {
       if (!level.type) {
         level.type = 1; // default to English if type is missing
@@ -96,7 +68,7 @@ async function readCustomLevels() {
 // Write custom levels to JSON file
 async function writeCustomLevels(levels) {
   try {
-    await fs.writeFile(CUSTOM_LEVELS_FILE, JSON.stringify(levels, null, 2));
+    await kv.set(CUSTOM_LEVELS_FILE, JSON.stringify(levels, null, 2));
     return true;
   } catch (error) {
     console.error("Error writing custom levels file:", error);
@@ -331,10 +303,6 @@ app.get("*", (req, res) => {
 // Initialize and start server
 async function startServer() {
   try {
-    await ensureDataDirectory();
-    await initializeWordsFile();
-    await initializeCustomLevelsFile();
-
     app.listen(PORT, () => {
       console.log(`🚀 Server running on http://localhost:${PORT}`);
       console.log(`📚 Words data stored in: ${WORDS_FILE}`);
