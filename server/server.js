@@ -301,6 +301,11 @@ app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "../dist/index.html"));
 });
 
+app.get("/api/cron", async (req, res) => {
+  const result = await backup();
+  res.json({ ok: result.success }).statusCode(200);
+});
+
 // Take a backup from database
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -343,14 +348,13 @@ async function backup() {
 // Initialize and start server
 async function startServer() {
   try {
-    app.listen(PORT, () => {
+    app.listen(PORT, async () => {
       console.log(`🚀 Server running on http://localhost:${PORT}`);
       console.log(`📚 Words data stored in: ${WORDS_FILE}`);
       console.log(`📊 Custom levels stored in: ${CUSTOM_LEVELS_FILE}`);
 
       // Take a backup every 1 week server start
-      backup();
-      setInterval(backup, 7 * 24 * 60 * 60 * 1000);
+      await backup();
     });
   } catch (error) {
     console.error("Error starting server:", error);
