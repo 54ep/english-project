@@ -32,6 +32,23 @@ class WordsAPI {
       throw error;
     }
   }
+  // Trigger server backup
+  static async runBackup(): Promise<{
+    ok: boolean;
+    timestamp?: string;
+    error?: string;
+  }> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/cron`);
+      if (!response.ok) {
+        throw new Error("Failed to trigger backup");
+      }
+      return await response.json();
+    } catch (error) {
+      console.error("Error triggering backup:", error);
+      throw error as Error;
+    }
+  }
 
   // Add a new word
   static async addWord(english: string, arabic: string): Promise<Word> {

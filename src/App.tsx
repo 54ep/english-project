@@ -59,6 +59,11 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [isErrorsTest, setIsErrorsTest] = useState(false); // لتتبع نوع الاختبار
   const [isCheckingCustomAnswer, setIsCheckingCustomAnswer] = useState(false); // لتتبع حالة التحقق في الاختبار المخصص
+  const [backupStatus, setBackupStatus] = useState<null | {
+    ok: boolean;
+    message: string;
+  }>(null);
+  const [isBackingUp, setIsBackingUp] = useState(false);
 
   // مصفوفات الكلمات للاختبارات
   const [testWords, setTestWords] = useState<Word[]>([]); // كلمات الاختبار العادي
@@ -567,6 +572,51 @@ function App() {
             <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 rounded-2xl text-center">
               <div className="text-2xl font-bold">{stats.totalWords}</div>
               <div className="text-sm opacity-90">إجمالي الكلمات</div>
+              <div className="mt-2">
+                <button
+                  onClick={async () => {
+                    try {
+                      setIsBackingUp(true);
+                      setBackupStatus(null);
+                      const result = await WordsAPI.runBackup();
+                      if (result.ok) {
+                        setBackupStatus({
+                          ok: true,
+                          message: "تم إنشاء نسخة احتياطية بنجاح",
+                        });
+                      } else {
+                        setBackupStatus({
+                          ok: false,
+                          message: result.error || "فشل النسخ الاحتياطي",
+                        });
+                      }
+                    } catch {
+                      setBackupStatus({
+                        ok: false,
+                        message: "فشل النسخ الاحتياطي",
+                      });
+                    } finally {
+                      setIsBackingUp(false);
+                    }
+                  }}
+                  className={`mt-1 px-3 py-1 bg-white ${
+                    isBackingUp ? "text-gray-400" : "text-blue-700"
+                  } rounded-full text-xs font-bold shadow hover:bg-blue-50 border border-blue-200 transition disabled:opacity-60`}
+                  disabled={isBackingUp}
+                  title="إنشاء نسخة احتياطية"
+                >
+                  {isBackingUp ? "جارٍ النسخ..." : "نسخة احتياطية"}
+                </button>
+                {backupStatus && (
+                  <div
+                    className={`mt-2 text-xs ${
+                      backupStatus.ok ? "text-green-100" : "text-red-200"
+                    }`}
+                  >
+                    {backupStatus.message}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
