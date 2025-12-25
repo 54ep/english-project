@@ -311,38 +311,38 @@ app.get("/api/cron", async (req, res) => {
 });
 
 // Take a backup from database
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+// const supabase = createClient(
+//   process.env.SUPABASE_URL,
+//   process.env.SUPABASE_SERVICE_ROLE_KEY
+// );
 
 async function backup() {
   try {
-    const words = await kv.get("words");
-    const levels = await kv.get("custom-levels");
-    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    // const words = await kv.get("words");
+    // const levels = await kv.get("custom-levels");
+    // const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
 
-    const wordsFile = `${timestamp}/words-backup.json`;
-    const levelsFile = `${timestamp}/levels-backup.json`;
+    // const wordsFile = `${timestamp}/words-backup.json`;
+    // const levelsFile = `${timestamp}/levels-backup.json`;
 
-    let res = await supabase.storage
-      .from("backups")
-      .upload(wordsFile, JSON.stringify(words, null, 2), {
-        upsert: false,
-        contentType: "application/json",
-      });
-    if (res.error) throw res.error;
+    // let res = await supabase.storage
+    //   .from("backups")
+    //   .upload(wordsFile, JSON.stringify(words, null, 2), {
+    //     upsert: false,
+    //     contentType: "application/json",
+    //   });
+    // if (res.error) throw res.error;
 
-    res = await supabase.storage
-      .from("backups")
-      .upload(levelsFile, JSON.stringify(levels, null, 2), {
-        upsert: false,
-        contentType: "application/json",
-      });
-    if (res.error) throw res.error;
+    // res = await supabase.storage
+    //   .from("backups")
+    //   .upload(levelsFile, JSON.stringify(levels, null, 2), {
+    //     upsert: false,
+    //     contentType: "application/json",
+    //   });
+    // if (res.error) throw res.error;
 
-    console.log(`✅ Backup uploaded at ${timestamp}`);
-    return { success: true, timestamp };
+    // console.log(`✅ Backup uploaded at ${timestamp}`);
+    // return { success: true, timestamp };
   } catch (err) {
     console.error("❌ Backup error:", err);
     return { success: false, error: err.message };
