@@ -1,4 +1,4 @@
 {
   "version": 2,
- "routes": [{ "src": "/(.*)", "dest": "/server/index.js" }]
+ "routes": [{ "src": "/(.*)", "dest": "/server/server.js" }]
 }
