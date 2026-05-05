@@ -26,6 +26,7 @@ type View =
   | "test-success"
   | "custom-levels"
   | "custom-test"
+  | "practice-level"
   | "arabic-test"; // Add "arabic-test" to the View type
 
 function App() {
@@ -77,13 +78,26 @@ function App() {
   const [showLevelForm, setShowLevelForm] = useState(false);
   const [newLevelName, setNewLevelName] = useState("");
   const [selectedWordsForLevel, setSelectedWordsForLevel] = useState<string[]>(
-    []
+    [],
   );
 
   // Edit level state
   const [editingLevel, setEditingLevel] = useState<CustomLevel | null>(null);
   const [editLevelName, setEditLevelName] = useState("");
   const [editLevelWords, setEditLevelWords] = useState<string[]>([]);
+
+  // Practice mode state
+  const [remainingPracticeWords, setRemainingPracticeWords] = useState<Word[]>(
+    [],
+  );
+  const [practiceLevelName, setPracticeLevelName] = useState<string | null>(
+    null,
+  );
+  const [currentPracticeWord, setCurrentPracticeWord] = useState<Word | null>(
+    null,
+  );
+  const [showPracticeTranslation, setShowPracticeTranslation] = useState(false);
+  const [practiceLevel, setPracticeLevel] = useState<CustomLevel | null>(null);
 
   // Load words from API on component mount
   useEffect(() => {
@@ -136,7 +150,7 @@ function App() {
         setError(null);
         const newWord = await WordsAPI.addWord(
           englishInput.trim(),
-          arabicInput.trim()
+          arabicInput.trim(),
         );
         setWords((prevWords) => [...prevWords, newWord]);
         setEnglishInput("");
@@ -175,10 +189,10 @@ function App() {
       const updatedWord = await WordsAPI.updateWord(
         id,
         english.trim(),
-        arabic.trim()
+        arabic.trim(),
       );
       setWords((prevWords) =>
-        prevWords.map((word) => (word.id === id ? updatedWord : word))
+        prevWords.map((word) => (word.id === id ? updatedWord : word)),
       );
       setEditingWord(null);
       setIsOnline(true);
@@ -209,7 +223,7 @@ function App() {
     // عند بدء اختبار الكلمات الصعبة، نسجل فقط الكلمات التي أخطأ فيها المستخدم
     const errorWords = words.filter(
       (word) =>
-        word.totalAttempts > word.correctAnswers && word.totalAttempts > 0
+        word.totalAttempts > word.correctAnswers && word.totalAttempts > 0,
     );
     if (errorWords.length === 0) {
       setCurrentView("test-success");
@@ -237,12 +251,12 @@ function App() {
       setError(null);
       const updatedWord = await WordsAPI.updateWordStats(
         currentTestWord.id,
-        isAnswerCorrect
+        isAnswerCorrect,
       );
       setWords((prevWords) =>
         prevWords.map((word) =>
-          word.id === currentTestWord.id ? updatedWord : word
-        )
+          word.id === currentTestWord.id ? updatedWord : word,
+        ),
       );
       setIsOnline(true);
 
@@ -250,11 +264,11 @@ function App() {
       if (isAnswerCorrect) {
         if (isErrorsTest) {
           setErrorTestWords((prev) =>
-            prev.filter((word) => word.id !== currentTestWord.id)
+            prev.filter((word) => word.id !== currentTestWord.id),
           );
         } else {
           setTestWords((prev) =>
-            prev.filter((word) => word.id !== currentTestWord.id)
+            prev.filter((word) => word.id !== currentTestWord.id),
           );
         }
       }
@@ -291,11 +305,11 @@ function App() {
     const totalWords = words.length;
     const totalAttempts = words.reduce(
       (sum, word) => sum + word.totalAttempts,
-      0
+      0,
     );
     const correctAnswers = words.reduce(
       (sum, word) => sum + word.correctAnswers,
-      0
+      0,
     );
     const accuracy =
       totalAttempts > 0
@@ -317,7 +331,7 @@ function App() {
   const getErrorWords = () => {
     return words.filter(
       (word) =>
-        word.totalAttempts > word.correctAnswers && word.totalAttempts > 0
+        word.totalAttempts > word.correctAnswers && word.totalAttempts > 0,
     );
   };
 
@@ -328,7 +342,7 @@ function App() {
   const totalErrorPages = Math.ceil(errorWords.length / errorWordsPerPage);
   const paginatedErrorWords = errorWords.slice(
     (currentErrorPage - 1) * errorWordsPerPage,
-    currentErrorPage * errorWordsPerPage
+    currentErrorPage * errorWordsPerPage,
   );
 
   // إذا حذفنا كلمة من الصفحة الأخيرة وصارت فارغة، نرجع للصفحة السابقة
@@ -359,7 +373,7 @@ function App() {
       setIsOnline(true);
     } catch {
       setError(
-        "خطأ في حفظ المستوى. تأكد من الاتصال بالخادم أو أن اسم المستوى غير مكرر."
+        "خطأ في حفظ المستوى. تأكد من الاتصال بالخادم أو أن اسم المستوى غير مكرر.",
       );
       setIsOnline(false);
     } finally {
@@ -369,7 +383,7 @@ function App() {
 
   const startCustomTest = (level: CustomLevel) => {
     const wordsForLevel = words.filter((word) =>
-      level.wordIds.includes(word.id)
+      level.wordIds.includes(word.id),
     );
 
     setCustomTestWords([...wordsForLevel]);
@@ -400,27 +414,27 @@ function App() {
       setError(null);
       const updatedWord = await WordsAPI.updateWordStats(
         currentTestWord.id,
-        isAnswerCorrect
+        isAnswerCorrect,
       );
       setWords((prevWords) =>
         prevWords.map((word) =>
-          word.id === currentTestWord.id ? updatedWord : word
-        )
+          word.id === currentTestWord.id ? updatedWord : word,
+        ),
       );
       // تحديث إحصائيات المستوى نفسه
       const updatedLevel = await WordsAPI.updateCustomLevelStats(
         selectedLevel,
-        isAnswerCorrect
+        isAnswerCorrect,
       );
       setCustomLevels((prev) =>
         prev.map((level) =>
-          level.name === selectedLevel ? updatedLevel : level
-        )
+          level.name === selectedLevel ? updatedLevel : level,
+        ),
       );
       setIsOnline(true);
       if (isAnswerCorrect) {
         setCustomTestWords((prev) =>
-          prev.filter((word) => word.id !== currentTestWord.id)
+          prev.filter((word) => word.id !== currentTestWord.id),
         );
       }
     } catch {
@@ -442,13 +456,50 @@ function App() {
     setShowResult(false);
   };
 
+  const startPracticeLevel = (level: CustomLevel) => {
+    const wordsForLevel = words.filter((word) =>
+      level.wordIds.includes(word.id),
+    );
+
+    setRemainingPracticeWords([...wordsForLevel]);
+    setPracticeLevelName(level.name);
+    setCurrentView("practice-level");
+    setPracticeLevel(level);
+    // اختيار كلمة عشوائية من المستوى
+    if (wordsForLevel.length > 0) {
+      const randomIndex = Math.floor(Math.random() * wordsForLevel.length);
+      setCurrentPracticeWord(wordsForLevel[randomIndex]);
+      setShowPracticeTranslation(false);
+    }
+  };
+
+  const nextPracticeWord = () => {
+    if (!currentPracticeWord) return;
+
+    // إزالة الكلمة الحالية من قائمة الكلمات المتبقية
+    const updatedRemaining = remainingPracticeWords.filter(
+      (word) => word.id !== currentPracticeWord.id,
+    );
+    setRemainingPracticeWords(updatedRemaining);
+
+    // إذا كانت هناك كلمات متبقية، عرض كلمة عشوائية
+    if (updatedRemaining.length > 0) {
+      const randomIndex = Math.floor(Math.random() * updatedRemaining.length);
+      setCurrentPracticeWord(updatedRemaining[randomIndex]);
+      setShowPracticeTranslation(false);
+    } else {
+      // انتهت جميع الكلمات
+      setCurrentPracticeWord(null);
+    }
+  };
+
   const deleteCustomLevel = async (levelName: string) => {
     try {
       setLoading(true);
       setError(null);
       await WordsAPI.deleteCustomLevel(levelName);
       setCustomLevels((prev) =>
-        prev.filter((level) => level.name !== levelName)
+        prev.filter((level) => level.name !== levelName),
       );
       setIsOnline(true);
     } catch {
@@ -1043,7 +1094,7 @@ function App() {
     const filteredWords = words.filter(
       (word) =>
         word.english.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        word.arabic.includes(searchTerm)
+        word.arabic.includes(searchTerm),
     );
 
     return (
@@ -1211,7 +1262,7 @@ function App() {
                           {Math.round(
                             ((word.totalAttempts - word.correctAnswers) /
                               word.totalAttempts) *
-                              100
+                              100,
                           )}
                           %
                         </div>
@@ -1256,7 +1307,7 @@ function App() {
                   <button
                     onClick={() =>
                       setCurrentErrorPage((p) =>
-                        Math.min(totalErrorPages, p + 1)
+                        Math.min(totalErrorPages, p + 1),
                       )
                     }
                     disabled={currentErrorPage === totalErrorPages}
@@ -1318,17 +1369,17 @@ function App() {
   //     level.wordIds.every((id) => englishWordIds.includes(id))
   // );
   const englishCustomLevels = customLevels.filter(
-    (level) => level.wordIds.length > 0 && level.type === 1
+    (level) => level.wordIds.length > 0 && level.type === 1,
   );
   const arabicCustomLevels = customLevels.filter((level) => level.type === 2);
   // عكس الترتيب: الأول إنجليزي ثم عربي
   const [customTab, setCustomTab] = useState<"english" | "arabic">("english");
   const renderCustomLevels = () => (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-yellow-400 via-yellow-500 to-orange-600 p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-yellow-400 via-yellow-500 to-orange-600 p-2 sm:p-4">
       <div className="max-w-2xl w-full mx-auto">
-        <div className="flex gap-2 mb-6">
+        <div className="flex gap-1 sm:gap-2 mb-4 sm:mb-6">
           <button
-            className={`flex-1 py-2 rounded-xl font-bold text-lg transition-all ${
+            className={`flex-1 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-bold text-sm sm:text-lg transition-all ${
               customTab === "english"
                 ? "bg-yellow-500 text-white"
                 : "bg-white text-yellow-700 border border-yellow-300"
@@ -1348,20 +1399,20 @@ function App() {
             مستويات عربي
           </button>
         </div>
-        <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-2">
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-3 sm:p-6 mb-4 sm:mb-6">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-1 sm:mb-2">
             {customTab === "english"
               ? "الاختبارات المخصصة للإنجليزي"
               : "الاختبارات المخصصة للعربي"}
           </h2>
-          <p className="text-gray-600 text-sm mb-4">
+          <p className="text-gray-600 text-xs sm:text-sm mb-3 sm:mb-4">
             {customTab === "english"
               ? "أنشئ مستوياتك الخاصة وأضف كلمات إنجليزية من القائمة المحفوظة"
               : "أنشئ مستوياتك الخاصة وأضف كلمات عربية من القائمة المحفوظة"}
           </p>
           <button
             onClick={() => setShowLevelForm(true)}
-            className="bg-yellow-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-yellow-600 transition-colors mb-4"
+            className="bg-yellow-500 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium text-xs sm:text-sm hover:bg-yellow-600 transition-colors mb-3 sm:mb-4"
           >
             {customTab === "english"
               ? "إضافة مستوى إنجليزي جديد"
@@ -1388,10 +1439,10 @@ function App() {
                   return (
                     <div
                       key={level.name}
-                      className="bg-yellow-50 rounded-xl p-4 mb-3 flex items-center justify-between"
+                      className="bg-yellow-50 rounded-lg sm:rounded-xl p-2.5 sm:p-4 mb-2 sm:mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0"
                     >
-                      <div>
-                        <div className="font-bold text-yellow-700">
+                      <div className="flex-1">
+                        <div className="font-bold text-yellow-700 text-sm sm:text-base">
                           {level.name}
                         </div>
                         <div className="text-xs text-gray-600">
@@ -1407,48 +1458,56 @@ function App() {
                           نسبة النجاح: {stats.accuracy}%
                         </div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex flex-col sm:gap-2 w-full sm:w-auto gap-1 sm:flex-wrap">
                         <button
                           onClick={() => startCustomTest(level)}
-                          className="bg-yellow-600 text-white px-3 py-1 rounded-lg font-medium hover:bg-yellow-700 transition-colors"
+                          className="bg-yellow-600 text-white px-2 sm:px-3 py-1 rounded-lg font-medium text-xs sm:text-sm hover:bg-yellow-700 transition-colors"
                         >
-                          بدء اختبار المستوى
+                          اختبار
                         </button>
                         <button
-                          onClick={() => startEditLevel(level)}
-                          className="bg-blue-500 text-white px-3 py-1 rounded-lg font-medium hover:bg-blue-600 transition-colors"
+                          onClick={() => startPracticeLevel(level)}
+                          className="bg-blue-600 text-white px-2 sm:px-3 py-1 rounded-lg font-medium text-xs sm:text-sm hover:bg-blue-700 transition-colors"
                         >
-                          تعديل
+                          ممارسة
                         </button>
-                        <button
-                          onClick={() => deleteCustomLevel(level.name)}
-                          className="bg-red-500 text-white px-3 py-1 rounded-lg font-medium hover:bg-red-600 transition-colors"
-                        >
-                          حذف
-                        </button>
+                        <div className="flex gap-1 sm:gap-2">
+                          <button
+                            onClick={() => startEditLevel(level)}
+                            className="flex-1 bg-green-500 text-white px-2 sm:px-3 py-1 rounded-lg font-medium text-xs sm:text-sm hover:bg-green-600 transition-colors"
+                          >
+                            تعديل
+                          </button>
+                          <button
+                            onClick={() => deleteCustomLevel(level.name)}
+                            className="flex-1 bg-red-500 text-white px-2 sm:px-3 py-1 rounded-lg font-medium text-xs sm:text-sm hover:bg-red-600 transition-colors"
+                          >
+                            حذف
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
                 })}
                 {/* أزرار الترقيم */}
-                <div className="flex justify-center gap-2 mt-4">
+                <div className="flex justify-center gap-1 sm:gap-2 mt-3 sm:mt-4 flex-wrap">
                   <button
                     onClick={() =>
                       setCustomLevelsPage((p) => Math.max(1, p - 1))
                     }
                     disabled={customLevelsPage === 1}
-                    className="px-3 py-1 rounded-lg bg-gray-200 text-gray-700 font-bold disabled:opacity-50"
+                    className="px-2 sm:px-3 py-1 rounded-lg bg-gray-200 text-gray-700 font-bold text-xs sm:text-sm disabled:opacity-50"
                   >
                     السابق
                   </button>
-                  <span className="px-3 py-1 font-bold">
-                    صفحة {customLevelsPage} من{" "}
+                  <span className="px-2 sm:px-3 py-1 font-bold text-xs sm:text-sm">
+                    {customLevelsPage} /{" "}
                     {Math.ceil(allLevels.length / LEVELS_PER_PAGE)}
                   </span>
                   <button
                     onClick={() => setCustomLevelsPage((p) => p + 1)}
                     disabled={endIdx >= allLevels.length}
-                    className="px-3 py-1 rounded-lg bg-gray-200 text-gray-700 font-bold disabled:opacity-50"
+                    className="px-2 sm:px-3 py-1 rounded-lg bg-gray-200 text-gray-700 font-bold text-xs sm:text-sm disabled:opacity-50"
                   >
                     التالي
                   </button>
@@ -1512,7 +1571,7 @@ function App() {
                             ]);
                           } else {
                             setSelectedWordsForLevel((prev) =>
-                              prev.filter((id) => id !== word.id)
+                              prev.filter((id) => id !== word.id),
                             );
                           }
                         }}
@@ -1565,7 +1624,7 @@ function App() {
                           setEditLevelWords((prev) => [...prev, word.id]);
                         } else {
                           setEditLevelWords((prev) =>
-                            prev.filter((id) => id !== word.id)
+                            prev.filter((id) => id !== word.id),
                           );
                         }
                       }}
@@ -1593,10 +1652,10 @@ function App() {
           </div>
         )}
       </div>
-      <div className="text-center mt-6">
+      <div className="text-center mt-4 sm:mt-6 w-full px-4 sm:px-0">
         <button
           onClick={() => setCurrentView("home")}
-          className="bg-white text-yellow-600 px-6 py-3 rounded-xl font-medium hover:bg-yellow-50 transition-colors"
+          className="w-full sm:w-auto bg-white text-yellow-600 px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-medium text-sm sm:text-base hover:bg-yellow-50 transition-colors"
         >
           العودة للرئيسية
         </button>
@@ -1604,30 +1663,143 @@ function App() {
     </div>
   );
 
+  const renderPracticeLevel = () => {
+    if (!currentPracticeWord) {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-blue-400 via-blue-500 to-cyan-600 p-2 sm:p-4 flex items-center justify-center">
+          <div className="max-w-md w-full mx-auto px-2 sm:px-0">
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-4 sm:p-8 text-center">
+              <div className="bg-blue-100 w-12 sm:w-16 h-12 sm:h-16 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-6">
+                <Brain className="text-blue-600" size={24} />
+              </div>
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2 sm:mb-4">
+                أحسنت! 🎉
+              </h2>
+              <p className="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base">
+                لقد استعرضت جميع كلمات المستوى!
+              </p>
+              <div className="flex flex-col gap-2 sm:gap-3">
+                <button
+                  onClick={() => startPracticeLevel(practiceLevel!)}
+                  className="w-full bg-gradient-to-r from-blue-500 to-cyan-600 text-white py-2 sm:py-3 rounded-lg sm:rounded-xl font-medium text-sm sm:text-base hover:from-blue-600 hover:to-cyan-700 transition-all"
+                >
+                  ممارسة مرة أخرى
+                </button>
+                <button
+                  onClick={() => setCurrentView("custom-levels")}
+                  className="w-full bg-gray-100 text-gray-700 py-2 sm:py-3 rounded-lg sm:rounded-xl font-medium text-sm sm:text-base hover:bg-gray-200 transition-colors"
+                >
+                  العودة للمستويات
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-400 via-blue-500 to-cyan-600 p-2 sm:p-4 flex items-center justify-center">
+        <div className="max-w-md w-full mx-auto px-2 sm:px-0">
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-3 sm:p-6">
+            <div className="text-center mb-4 sm:mb-6">
+              <div className="bg-blue-500 w-12 sm:w-16 h-12 sm:h-16 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-4">
+                <Brain className="text-white" size={24} />
+              </div>
+              <h2 className="text-base sm:text-xl font-bold text-gray-800 mb-1 sm:mb-2">
+                ممارسة: {practiceLevelName}
+              </h2>
+              <p className="text-gray-600 text-xs sm:text-sm">
+                ركز على الكلمة وفكر بالترجمة في رأسك
+              </p>
+              <p className="text-gray-500 text-xs mt-1 sm:mt-2">
+                متبقي: {remainingPracticeWords.length}
+              </p>
+            </div>
+            <div className="text-center mb-4 sm:mb-6">
+              <div className="bg-gradient-to-r from-blue-50 to-cyan-50 p-4 sm:p-8 rounded-lg sm:rounded-xl mb-4 sm:mb-6 border-2 border-blue-100">
+                <div
+                  className="text-2xl sm:text-4xl font-bold text-blue-600 mb-1 sm:mb-2"
+                  dir={practiceLevel?.type === 1 ? "ltr" : "rtl"}
+                >
+                  {practiceLevel?.type === 1
+                    ? currentPracticeWord.english
+                    : currentPracticeWord.arabic}
+                </div>
+              </div>
+              {!showPracticeTranslation ? (
+                <div className="text-gray-500 text-xs sm:text-sm mb-3 sm:mb-4">
+                  فكر بالترجمة الآن... ثم اضغط عرض الترجمة
+                </div>
+              ) : (
+                <div className="bg-green-50 p-3 sm:p-4 rounded-lg sm:rounded-xl mb-3 sm:mb-4 border-2 border-green-100 animate-fade-in">
+                  <p className="text-gray-600 text-xs sm:text-sm mb-1 sm:mb-2">
+                    الترجمة:
+                  </p>
+                  <div
+                    className="text-lg sm:text-2xl font-bold text-green-700"
+                    dir={practiceLevel?.type === 1 ? "rtl" : "ltr"}
+                  >
+                    {practiceLevel?.type === 1
+                      ? currentPracticeWord.arabic
+                      : currentPracticeWord.english}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="flex flex-col gap-2 sm:gap-3">
+              {!showPracticeTranslation ? (
+                <button
+                  onClick={() => setShowPracticeTranslation(true)}
+                  className="w-full bg-gradient-to-r from-blue-500 to-cyan-600 text-white py-2 sm:py-3 rounded-lg sm:rounded-xl font-medium text-sm sm:text-base hover:from-blue-600 hover:to-cyan-700 transition-all"
+                >
+                  عرض الترجمة
+                </button>
+              ) : (
+                <button
+                  onClick={nextPracticeWord}
+                  className="w-full bg-gradient-to-r from-blue-500 to-cyan-600 text-white py-2 sm:py-3 rounded-lg sm:rounded-xl font-medium text-sm sm:text-base hover:from-blue-600 hover:to-cyan-700 transition-all"
+                >
+                  كلمة أخرى
+                </button>
+              )}
+              <button
+                onClick={() => setCurrentView("custom-levels")}
+                className="w-full bg-gray-100 text-gray-700 py-2 sm:py-3 rounded-lg sm:rounded-xl font-medium text-sm sm:text-base hover:bg-gray-200 transition-colors"
+              >
+                العودة للمستويات
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderCustomTest = () => {
     if (!currentTestWord) return null;
     return (
-      <div className="min-h-screen bg-gradient-to-br from-yellow-400 via-yellow-500 to-orange-600 p-4">
-        <div className="max-w-md mx-auto">
-          <div className="bg-white rounded-2xl shadow-xl p-6">
+      <div className="min-h-screen bg-gradient-to-br from-yellow-400 via-yellow-500 to-orange-600 p-2 sm:p-4 flex items-center justify-center">
+        <div className="max-w-md w-full mx-auto px-2 sm:px-0">
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-3 sm:p-6">
             {!showResult ? (
               <>
-                <div className="text-center mb-6">
-                  <div className="bg-yellow-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Brain className="text-white" size={32} />
+                <div className="text-center mb-4 sm:mb-6">
+                  <div className="bg-yellow-500 w-12 sm:w-16 h-12 sm:h-16 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-4">
+                    <Brain className="text-white" size={24} />
                   </div>
-                  <h2 className="text-xl font-bold text-gray-800 mb-2">
-                    اختبار مستوى: {selectedLevel}
+                  <h2 className="text-base sm:text-xl font-bold text-gray-800 mb-1 sm:mb-2">
+                    اختبار: {selectedLevel}
                   </h2>
-                  <p className="text-gray-600 text-sm">
+                  <p className="text-gray-600 text-xs sm:text-sm">
                     ما معنى هذه الكلمة ب
                     {customLevel?.type === 1 ? "العربية" : "الإنجليزية"}؟
                   </p>
                 </div>
-                <div className="text-center mb-6">
-                  <div className="bg-gradient-to-r from-yellow-50 to-orange-50 p-6 rounded-xl mb-4 border-2 border-yellow-100">
+                <div className="text-center mb-4 sm:mb-6">
+                  <div className="bg-gradient-to-r from-yellow-50 to-orange-50 p-4 sm:p-6 rounded-lg sm:rounded-xl mb-3 sm:mb-4 border-2 border-yellow-100">
                     <div
-                      className="text-3xl font-bold text-yellow-600 mb-2"
+                      className="text-2xl sm:text-3xl font-bold text-yellow-600 mb-1 sm:mb-2"
                       dir="ltr"
                     >
                       {customLevel?.type === 1
@@ -1639,8 +1811,8 @@ function App() {
                     type="text"
                     value={userAnswer}
                     onChange={(e) => setUserAnswer(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all text-center"
-                    placeholder="اكتب المعنى بالعربية..."
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all text-center text-sm sm:text-base"
+                    placeholder="اكتب المعنى..."
                     dir="rtl"
                     onKeyPress={(e) =>
                       e.key === "Enter" &&
@@ -1653,7 +1825,7 @@ function App() {
                 <button
                   onClick={checkCustomAnswer}
                   disabled={!userAnswer.trim() || isCheckingCustomAnswer}
-                  className="w-full bg-gradient-to-r from-yellow-500 to-orange-600 text-white py-3 rounded-xl font-medium hover:from-yellow-600 hover:to-orange-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-gradient-to-r from-yellow-500 to-orange-600 text-white py-2 sm:py-3 rounded-lg sm:rounded-xl font-medium text-sm sm:text-base hover:from-yellow-600 hover:to-orange-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isCheckingCustomAnswer
                     ? "جاري التحقق..."
@@ -1661,26 +1833,26 @@ function App() {
                 </button>
               </>
             ) : (
-              <div className="flex flex-col items-center justify-center text-center w-full gap-4">
+              <div className="flex flex-col items-center justify-center text-center w-full gap-2 sm:gap-4">
                 <div
-                  className={`flex flex-col items-center justify-center p-6 sm:p-8 rounded-2xl mb-6 shadow-lg border transition-all duration-300 ${
+                  className={`flex flex-col items-center justify-center p-3 sm:p-8 rounded-lg sm:rounded-2xl mb-3 sm:mb-6 shadow-lg border transition-all duration-300 ${
                     isCorrect
                       ? "bg-green-50 border-green-200"
                       : "bg-red-50 border-red-200"
                   }`}
                   style={{
                     minWidth: "220px",
-                    maxWidth: "400px",
+                    maxWidth: "100%",
                     margin: "0 auto",
                   }}
                 >
                   <div
-                    className={`flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full mb-4 shadow-lg ${
+                    className={`flex items-center justify-center w-12 h-12 sm:w-20 sm:h-20 rounded-full mb-2 sm:mb-4 shadow-lg ${
                       isCorrect ? "bg-green-100" : "bg-red-100"
                     }`}
                   >
                     <span
-                      className={`text-4xl sm:text-5xl ${
+                      className={`text-2xl sm:text-5xl ${
                         isCorrect ? "text-green-500" : "text-red-500"
                       }`}
                     >
@@ -1688,38 +1860,36 @@ function App() {
                     </span>
                   </div>
                   <div
-                    className={`text-xl sm:text-2xl font-bold mb-2 ${
+                    className={`text-lg sm:text-2xl font-bold mb-1 sm:mb-2 ${
                       isCorrect ? "text-green-700" : "text-red-700"
                     }`}
                   >
-                    {isCorrect ? "إجابة صحيحة!" : "إجابة خاطئة"}
+                    {isCorrect ? "صحيح!" : "خاطئ"}
                   </div>
                   <div
-                    className="text-gray-700 text-base sm:text-lg mb-1 font-semibold"
+                    className="text-gray-700 text-xs sm:text-lg mb-1 font-semibold"
                     dir="ltr"
                   >
                     <strong>{currentTestWord.english}</strong>
                   </div>
-                  <div className="text-gray-600 text-sm sm:text-base" dir="rtl">
-                    المعنى الصحيح: <strong>{currentTestWord.arabic}</strong>
+                  <div className="text-gray-600 text-xs sm:text-base" dir="rtl">
+                    <strong>{currentTestWord.arabic}</strong>
                   </div>
                   {isCorrect ? (
-                    <div className="bg-green-50 rounded-xl p-3 mt-2 shadow text-green-700 text-sm sm:text-base font-medium animate-fade-in">
-                      رائع! استمر في هذا الأداء المميز، كل إجابة صحيحة تقربك من
-                      إتقان اللغة أكثر 💪✨
+                    <div className="bg-green-50 rounded-lg sm:rounded-xl p-2 sm:p-3 mt-1 sm:mt-2 shadow text-green-700 text-xs sm:text-sm font-medium animate-fade-in">
+                      رائع! استمر بهذا الأداء 💪
                     </div>
                   ) : (
-                    <div className="bg-red-50 rounded-xl p-3 mt-2 shadow text-red-700 text-sm sm:text-base font-medium animate-fade-in">
-                      لا تقلق! الخطأ جزء من التعلم، حاول مرة أخرى وستتحسن
-                      مهاراتك مع الوقت 🚀
+                    <div className="bg-red-50 rounded-lg sm:rounded-xl p-2 sm:p-3 mt-1 sm:mt-2 shadow text-red-700 text-xs sm:text-sm font-medium animate-fade-in">
+                      حاول مرة أخرى! 🚀
                     </div>
                   )}
                 </div>
-                <div className="flex flex-col gap-3 w-full max-w-xs sm:max-w-sm mx-auto">
+                <div className="flex flex-col gap-2 sm:gap-3 w-full">
                   <button
                     disabled={isCheckingCustomAnswer}
                     onClick={nextCustomQuestion}
-                    className="w-full bg-gradient-to-r from-yellow-500 to-orange-600 text-white py-3 rounded-xl font-medium hover:from-yellow-600 hover:to-orange-700 transition-all"
+                    className="w-full bg-gradient-to-r from-yellow-500 to-orange-600 text-white py-2 sm:py-3 rounded-lg sm:rounded-xl font-medium text-sm sm:text-base hover:from-yellow-600 hover:to-orange-700 transition-all"
                   >
                     كلمة أخرى
                   </button>
@@ -1727,7 +1897,7 @@ function App() {
                     onClick={() => {
                       setCurrentView("custom-levels");
                     }}
-                    className="w-full bg-gray-100 text-gray-700 py-3 rounded-xl font-medium hover:bg-gray-200 transition-colors"
+                    className="w-full bg-gray-100 text-gray-700 py-2 sm:py-3 rounded-lg sm:rounded-xl font-medium text-sm sm:text-base hover:bg-gray-200 transition-colors"
                   >
                     العودة للمستويات
                   </button>
@@ -1762,13 +1932,13 @@ function App() {
       };
       const savedLevel = await WordsAPI.addCustomLevel(updatedLevel);
       setCustomLevels((prev) =>
-        prev.map((l) => (l.name === editingLevel.name ? savedLevel : l))
+        prev.map((l) => (l.name === editingLevel.name ? savedLevel : l)),
       );
       cancelEditLevel();
       setIsOnline(true);
     } catch {
       setError(
-        "خطأ في تعديل المستوى. تأكد من الاتصال بالخادم أو أن اسم المستوى غير مكرر."
+        "خطأ في تعديل المستوى. تأكد من الاتصال بالخادم أو أن اسم المستوى غير مكرر.",
       );
       setIsOnline(false);
       console.error("Error updating custom level:", error);
@@ -1794,6 +1964,7 @@ function App() {
       {currentView === "errors" && renderErrorsView()}
       {currentView === "custom-levels" && renderCustomLevels()}
       {currentView === "custom-test" && renderCustomTest()}
+      {currentView === "practice-level" && renderPracticeLevel()}
       {currentView === "test-success" && renderTestSuccess()}
       {currentView === "arabic-test" && renderArabicTest()}
     </div>
